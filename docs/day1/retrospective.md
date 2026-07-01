@@ -2,7 +2,7 @@
 
 テーマ：アーキテクチャ設計と境界づけ
 
-関連資料：[学習ガイド](./study-guide.md) / [学習ノート](./learning-notes.md)
+関連資料：[ドキュメント案内](./README.md) / [学習ガイド](./study-guide.md) / [学習ノート](./learning-notes.md)
 
 ## 今日学んだこと
 
@@ -10,8 +10,7 @@
 
 ### 1. 変更理由でコードをまとめる
 
-変更理由でコードがまとまっていると、仕様を変更する際に影響範囲、変更箇所がわかりやすい。
-例えば項目の追加をしたいとき、型、データ取得、画面表示などを修正する必要がある。関連するコードが`features/study-log`にまとまっていると、影響範囲を探しやすく修正しやすい。
+変更理由でコードがまとまっていると、仕様変更の影響範囲と修正箇所が分かりやすい。例えば項目を追加するときは、型、データ取得、画面表示などの関連コードが`features/study-log`にまとまっているため、必要な変更を追いやすい。
 
 ### 2. `features`と`shared`を分ける
 
@@ -32,7 +31,7 @@ app → features → shared
 ### 4. 厳格なTypeScript設定で実行前に問題を見つける
 
 `noUncheckedIndexedAccess`を有効にすると、配列や辞書へアクセスした結果に`undefined`の可能性が追加される。
-そのため、存在確認(undefinedでないことを確認するコードが必要)なしで使用した場合に警告されることになる。
+そのため、値が`undefined`ではないことを確認せずに使用すると、型エラーになる。
 
 ```ts
 const firstLog = studyLogs[0]
@@ -46,6 +45,7 @@ const firstLog = studyLogs[0]
 現在は外部API通信がないため、`api`フォルダを作っても役割がない。必要になる前に階層を作ると、用途が曖昧なコードや不要な抽象化が増えるため、実際に必要になった時点で追加する。
 
 ### 6. Clean Architectureについて
+
 #### 6-1. Clean Architectureの層を変更理由で使い分ける
 
 Clean Architectureは、重要な業務ルールをReactや保存技術から分離し、外側の層から内側の層へ依存させる設計である。
@@ -54,8 +54,10 @@ Clean Architectureは、重要な業務ルールをReactや保存技術から分
 UI・Infrastructure → Application → Domain
 ```
 
+この矢印は処理やデータの流れではなく、コード上の依存方向を表している。
+
 - `UI`：表示、ユーザー操作、loading・success・errorなどの画面状態を扱う
-- `Application`：Infrastructureからデータ取得、Domainで定義した型、ルールで集計し、UIに表示項目を投げる。こんな感じでユースケースの流れを組み立てる
+- `Application`：Repositoryの契約を介してデータを取得し、Domainのルールを使って結果を返すなど、ユースケースの流れを組み立てる
 - `Domain`：学習ログの型、合計計算、学習時間の制約などの業務ルールを扱う
 - `Infrastructure`：メモリ、localStorage、APIなど、保存や通信の具体的な方法を扱う
 
@@ -72,7 +74,7 @@ ApplicationがInfrastructureの都合に合わせるのではなく、Infrastruc
 1. 学習ログに関するコードは、ファイル形式ではなく変更理由に合わせて`features/study-log`へまとめる。
 2. 依存方向は`app → features → shared`に限定し、循環参照と変更の波及を防ぐ。
 3. `shared`や外部API用の階層は先回りして作らず、具体的な利用箇所が現れてから追加する。
-4. クリーンアーキテクチャを採用し、将来データの保存先やUIが変わっても、業務ルールやユースケースへの影響を抑えられる。また、各層(UI、Application、Domain、Infrastructure)を個別にテストでき、機能追加時にもコードの責務を判断しやすくなる。
+4. Clean Architectureを採用し、保存先やUIの変更が業務ルールやユースケースへ波及しにくい構造にする。
 
 ## 採用した方針
 
