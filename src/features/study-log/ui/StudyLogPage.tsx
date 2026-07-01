@@ -1,3 +1,5 @@
+import './StudyLogPage.css'
+
 export function StudyLogPage() {
   return (
     <main className="page">
