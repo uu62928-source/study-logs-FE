@@ -356,10 +356,10 @@ UI・Infrastructure → Application → Domain
 
 ## 現在の理解を確認するチェックリスト
 
-- [ ] コードの配置を、ファイル形式ではなく変更理由から説明できる
-- [ ] `app`、`features`、`shared`の責務を説明できる
-- [ ] アプリ全体のCSSとfeature固有CSSを区別できる
-- [ ] feature外部と内部でimport方法を使い分けられる
-- [ ] feature同士を直接依存させない理由を説明できる
-- [ ] チームで安全に`shared`へ移動する手順を説明できる
-- [ ] Clean Architectureの依存方向と依存性逆転を説明できる
+- [x] コードの配置を、ファイル形式ではなく変更理由から説明できる
+- [x] `app`、`features`、`shared`の責務を説明できる
+- [x] アプリ全体のCSSとfeature固有CSSを区別できる
+- [x] feature外部と内部でimport方法を使い分けられる
+- [x] feature同士を直接依存させない理由を説明できる
+- [x] チームで安全に`shared`へ移動する手順を説明できる
+- [x] Clean Architectureの依存方向と依存性逆転を説明できる
