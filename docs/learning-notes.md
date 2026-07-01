@@ -333,11 +333,7 @@ feature ─×→ 別feature
 
 ---
 
-## Clean Architectureは何を分離するのか
-
-### 何が分かりにくかったか
-
-「ユースケースや外部境界が少ない段階で全レイヤーを作ると空の抽象化が増える」という説明に対し、Clean Architecture自体の役割と、実装すると何が変わるのかを具体的に確認する必要があった。
+## Clean Architectureについて
 
 ### 解説
 
