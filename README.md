@@ -54,11 +54,10 @@ src/
 ## 設計ドキュメント
 
 - [アーキテクチャ](docs/architecture.md)
-- [Clean Architecture](docs/clean-architecture.md)
 - [コーディング規約](docs/coding-conventions.md)
 - [学習ノート](docs/learning-notes.md)
-- [React + TypeScript + AIコーディング カリキュラム](react-typescript-ai-coding-curriculum.md)
 
 ## プロジェクトの位置づけ
 
-このリポジトリは学習中の設計判断と実装過程を記録するためのプロジェクトです。機能の多さよりも、変更理由に沿った責務分離と依存方向を重視しています。
+学習用に作成するプログラム。
+機能よりも、変更理由に沿った責務分離と依存方向の学習など学習面を重視しています。
