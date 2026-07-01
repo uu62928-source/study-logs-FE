@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { App } from './App'
+import { StudyLogPage } from './StudyLogPage'
 
-describe('App', () => {
+describe('StudyLogPage', () => {
   it('学習ログの見出しを表示する', () => {
-    render(<App />)
+    render(<StudyLogPage />)
 
     expect(
       screen.getByRole('heading', { level: 1, name: '学習ログ' }),
