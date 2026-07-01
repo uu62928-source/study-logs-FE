@@ -1,5 +1,7 @@
-import { StudyLogPage } from '@/features/study-log'
+import { configureStudyLog, StudyLogPage } from '@/features/study-log'
+
+const { getStudyLogSummary } = configureStudyLog()
 
 export function App() {
-  return <StudyLogPage />
+  return <StudyLogPage getStudyLogSummary={getStudyLogSummary} />
 }

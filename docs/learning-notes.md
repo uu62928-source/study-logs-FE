@@ -333,6 +333,36 @@ feature ─×→ 別feature
 
 ---
 
+## Clean Architectureは何を分離するのか
+
+### 何が分かりにくかったか
+
+「ユースケースや外部境界が少ない段階で全レイヤーを作ると空の抽象化が増える」という説明に対し、Clean Architecture自体の役割と、実装すると何が変わるのかを具体的に確認する必要があった。
+
+### 解説
+
+Clean Architectureは、重要な業務ルールをReactや保存技術から分離し、依存を内側へ向ける設計である。
+
+```text
+UI・Infrastructure → Application → Domain
+```
+
+このプロジェクトでは、学習ログの合計計算をDomain、ログを取得して集計する処理をApplication、メモリから取得する具体的な方法をInfrastructure、表示をUIへ置いた。
+
+特に重要なのは、RepositoryのinterfaceをApplicationが所有する点である。Applicationが必要な契約を決め、Infrastructureがその契約へ従う。これを依存性逆転という。
+
+詳しいファイル対応と実装例は[Clean Architecture解説](./clean-architecture.md)を参照する。
+
+### 判断ルール
+
+- DomainへReact、API、localStorageなど外側の技術を持ち込まない
+- Applicationは具体的なRepository実装ではなく、自分が定義したinterfaceへ依存する
+- UIとInfrastructureはApplicationのユースケースやPortへ依存してよい
+- 具体的な実装の組み立てはComposition Rootへ限定する
+- 空のレイヤーを先に作らず、実際のルールや外部境界がある場合に追加する
+
+---
+
 ## 現在の理解を確認するチェックリスト
 
 - [ ] コードの配置を、ファイル形式ではなく変更理由から説明できる
@@ -341,3 +371,4 @@ feature ─×→ 別feature
 - [ ] feature外部と内部でimport方法を使い分けられる
 - [ ] feature同士を直接依存させない理由を説明できる
 - [ ] チームで安全に`shared`へ移動する手順を説明できる
+- [ ] Clean Architectureの依存方向と依存性逆転を説明できる

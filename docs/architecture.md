@@ -13,13 +13,17 @@
 
 featureの公開入口は直下の`index.ts`とする。feature間の直接依存は禁止し、`app`が組み合わせる。
 
+`study-log`内部では、実際に存在するユースケースと外部境界に対して最小限のClean Architectureを適用する。詳細は[Clean Architecture解説](./clean-architecture.md)に記録する。
+
 ## 見送った案
 
 - 種類別の`components`、`hooks`、`types`をトップレベルに並べる案: 小さいうちは単純だが、機能の所有者と変更範囲が見えにくくなる
-- Clean Architectureの全レイヤーを先に作る案: 現時点ではユースケースも外部境界も少なく、空の抽象化が増える
+- アプリ全体へ一律にClean Architectureの全レイヤーを作る案: featureごとに必要な境界だけを作り、空の抽象化を避ける
 
 ## 影響
 
 - 機能に関係するコードを近くに保てる
 - `shared`へ移す判断が必要になる
+- `study-log`ではUIとデータ保存方法を、Applicationが定義するRepository interfaceによって分離できる
+- 小さな機能としてはファイル数が増えるため、新しい層は具体的な変更理由がある場合だけ追加する
 - ESLintによる依存方向の自動検査は、構成が育って違反リスクが現れてから検討する
