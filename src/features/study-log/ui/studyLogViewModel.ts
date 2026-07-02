@@ -4,6 +4,7 @@ export type StudyLogListItemViewModel = Readonly<{
   id: string
   topic: string
   durationLabel: string
+  durationInputValue: string
 }>
 
 export type StudyLogSummaryViewModel = Readonly<{
@@ -25,6 +26,7 @@ export function toStudyLogSummaryViewModel(
       id: studyLog.id,
       topic: studyLog.topic,
       durationLabel: `${studyLog.durationMinutes}分`,
+      durationInputValue: String(studyLog.durationMinutes),
     })),
     totalDurationLabel: `${summary.totalMinutes}分`,
   }

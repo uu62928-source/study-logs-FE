@@ -2,7 +2,7 @@ import {
   calculateTotalStudyMinutes,
   type StudyLog,
 } from '../../domain/studyLog'
-import type { StudyLogRepository } from '../ports/StudyLogRepository'
+import type { StudyLogReader } from '../ports/StudyLogRepository'
 
 export type StudyLogSummary = Readonly<{
   studyLogs: readonly StudyLog[]
@@ -12,7 +12,7 @@ export type StudyLogSummary = Readonly<{
 export type GetStudyLogSummary = () => Promise<StudyLogSummary>
 
 export function createGetStudyLogSummary(
-  repository: StudyLogRepository,
+  repository: StudyLogReader,
 ): GetStudyLogSummary {
   return async () => {
     const studyLogs = await repository.findAll()

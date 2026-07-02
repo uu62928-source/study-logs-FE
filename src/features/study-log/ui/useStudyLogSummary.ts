@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type { GetStudyLogSummary } from '../application/use-cases/getStudyLogSummary'
 import {
@@ -8,10 +8,16 @@ import {
 
 export function useStudyLogSummary(
   getStudyLogSummary: GetStudyLogSummary,
-): StudyLogViewState {
+): Readonly<{ state: StudyLogViewState; reload: () => void }> {
+  const [requestVersion, setRequestVersion] = useState(0)
   const [state, setState] = useState<StudyLogViewState>({
     status: 'loading',
   })
+
+  const reload = useCallback(() => {
+    setState({ status: 'loading' })
+    setRequestVersion((version) => version + 1)
+  }, [])
 
   useEffect(() => {
     let isActive = true
@@ -41,7 +47,7 @@ export function useStudyLogSummary(
     return () => {
       isActive = false
     }
-  }, [getStudyLogSummary])
+  }, [getStudyLogSummary, requestVersion])
 
-  return state
+  return { state, reload }
 }
