@@ -6,25 +6,292 @@
 
 ---
 
-## 学んだテーマ
+## Domain型をUIへ直接渡さない
 
 ### 何が分かりにくかったか
 
-<!-- 疑問、型エラー、判断に迷った点を書く -->
+Domain型にも`topic`や`durationMinutes`が入っているため、なぜそのまま画面へ渡してはいけないのかが分かりにくかった。
 
-### 解説
+### Domain型とViewModelの役割
 
-<!-- 調べた内容やCodexとの対話で理解したことを、自分の言葉で書く -->
-
-### 実装例
+Domain型は「業務上、その値が何であるか」を表す。
 
 ```ts
-// 型やコンポーネントAPIの例を書く
+type StudyLog = {
+  id: StudyLogId
+  topic: string
+  durationMinutes: StudyDurationMinutes
+}
+```
+
+一方、ViewModelは「画面へどのように表示するか」を表す。
+
+```ts
+type StudyLogListItemViewModel = {
+  id: string
+  topic: string
+  durationLabel: string
+}
+```
+
+`durationMinutes: 90`は計算に向いたDomainの値であり、`durationLabel: '90分'`は表示に向いたUIの値である。
+
+### 直接渡した場合の問題
+
+Domain型を直接受け取ると、表示形式の決定がコンポーネントへ入り込む。
+
+```tsx
+// UIが数値の表示方法まで決めている
+<span>{studyLog.durationMinutes}分</span>
+```
+
+「90分」を「1時間30分」へ変更するとき、同じ変換を行うすべてのコンポーネントを探して修正する必要がある。
+
+現在は`toStudyLogSummaryViewModel()`へ変換を集めている。
+
+```ts
+durationLabel: `${studyLog.durationMinutes}分`
+```
+
+UIは完成した表示用文字列を受け取って表示するだけになる。
+
+```tsx
+<span>{studyLog.durationLabel}</span>
 ```
 
 ### 判断ルール
 
-<!-- 次に似た状況へ出会ったとき、どう判断するかを書く -->
+- 計算、比較、業務ルールに使う値はDomain型に置く
+- 表示用に整形した文字列はViewModelに置く
+- 表示形式の変更をUI全体へ散らしたくない場合は、ViewModelへの変換を用意する
+- 小さな画面ですべての値をそのまま表示するだけなら、無理にViewModelを作る必要はない
+
+---
+
+## UI状態をdiscriminated unionで表す
+
+### 何が分かりにくかったか
+
+なぜ`isLoading`や`errorMessage?`などの個別のpropsではなく、`status`を持つunionにするのかが分かりにくかった。
+
+### optional propsで表した場合
+
+次の型では、各プロパティを自由に組み合わせられる。
+
+```ts
+type StudyLogViewProps = {
+  isLoading: boolean
+  summary?: StudyLogSummaryViewModel
+  errorMessage?: string
+}
+```
+
+そのため、次のような矛盾した状態も型エラーにならない。
+
+```ts
+{
+  isLoading: true,
+  summary: { /* 読み込み済みのデータ */ },
+  errorMessage: '読み込みに失敗しました'
+}
+```
+
+読み込み中、成功、失敗が同時に成立しており、UI側でどれを優先するか考えなければならない。
+
+### discriminated unionで表した場合
+
+現在は`status`を判別キーとして、取り得る状態を列挙している。
+
+```ts
+type StudyLogViewState =
+  | { status: 'loading' }
+  | { status: 'empty' }
+  | { status: 'success'; summary: StudyLogSummaryViewModel }
+  | { status: 'error'; message: string }
+```
+
+この型では、一度に選べる状態は1つだけである。また、状態ごとに必要な値も決まる。
+
+```text
+loading → 追加データなし
+empty   → 追加データなし
+success → summaryが必要
+error   → messageが必要
+```
+
+例えば`success`なのに`summary`がない値や、`loading`に`message`を付けた値は型エラーになる。
+
+`StudyLogView`内では`status`を確認すると、TypeScriptがその状態の型へ絞り込む。
+
+```tsx
+{
+  state.status === 'success' && (
+    <strong>{state.summary.totalDurationLabel}</strong>
+  )
+}
+```
+
+この分岐の中では、`summary`が必ず存在することをTypeScriptが理解している。
+
+### 判断ルール
+
+- 複数の状態が同時に成立してはいけない場合はdiscriminated unionを検討する
+- 判別キーには`status`、`type`、`variant`などを使う
+- 各状態には、その状態でだけ必要な値を持たせる
+- booleanやoptional propsを追加する前に、状態の種類として分けるべきか確認する
+
+---
+
+## ContainerとPresentationalを分ける
+
+### 何が分かりにくかったか
+
+`StudyLogPage`と`StudyLogView`は、どちらも画面に関係するコンポーネントであり、分けた後の役割の違いが分かりにくかった。
+
+### 今回の役割分担
+
+`StudyLogPage`はContainerである。データをどのように準備するかを担当する。
+
+```tsx
+export function StudyLogPage({ getStudyLogSummary }: StudyLogPageProps) {
+  const state = useStudyLogSummary(getStudyLogSummary)
+
+  return <StudyLogView state={state} />
+}
+```
+
+`StudyLogView`はPresentational componentである。渡された状態をどのように表示するかを担当する。
+
+```tsx
+type StudyLogViewProps = {
+  state: StudyLogViewState
+}
+
+export function StudyLogView({ state }: StudyLogViewProps) {
+  // stateに応じてJSXを返す
+}
+```
+
+役割を短く表すと次のようになる。
+
+```text
+StudyLogPage: 表示するデータを用意する
+StudyLogView: 用意されたデータを表示する
+```
+
+データの流れは一方向である。
+
+```text
+getStudyLogSummary
+        ↓
+useStudyLogSummary
+        ↓
+StudyLogPage
+        ↓ stateをpropsで渡す
+StudyLogView
+        ↓
+画面
+```
+
+`StudyLogView`はRepository、ユースケース、データ取得のタイミングを知らない。必要なのは`StudyLogViewState`だけなので、任意の状態をpropsで渡して表示を確認しやすい。
+
+### 常に分ける必要はない
+
+小さく単純なコンポーネントまで機械的に分けると、ファイル間を移動する手間が増える。
+
+今回のように、非同期取得、状態変換、複数の表示状態がある場合は、データ準備と表示を分ける価値がある。
+
+### 判断ルール
+
+- データ取得や状態管理とJSXが混ざって読みにくくなったら分離を検討する
+- Containerは「何を表示するか」を準備する
+- Presentational componentは「どう表示するか」を担当する
+- 表示だけを独立してテスト・確認したい場合は分離が有効
+- 分けても役割を一文で説明できないなら、分割が早すぎる可能性がある
+
+---
+
+## hookをApplicationとUIの変換境界にする
+
+### 何が分かりにくかったか
+
+`useStudyLogSummary`が単なるデータ取得用hookではなく、Applicationの結果をUI状態へ変換する境界でもある、という点が分かりにくかった。
+
+### ApplicationとUIでは「成功」の意味が異なる
+
+Applicationの`getStudyLogSummary()`にとって、0件取得は正常な成功である。
+
+```ts
+{
+  studyLogs: [],
+  totalMinutes: 0
+}
+```
+
+しかしUIでは、1件以上ある一覧と0件の画面で、表示内容やユーザーへ促す操作が異なる。
+
+```text
+Application: 取得成功
+                  ↓ UIの意味へ変換
+UI:          empty または success
+```
+
+この変換を`useStudyLogSummary`が担当する。
+
+```ts
+summary.studyLogs.length === 0
+  ? { status: 'empty' }
+  : {
+      status: 'success',
+      summary: toStudyLogSummaryViewModel(summary),
+    }
+```
+
+さらに、Applicationから受け取ったDomain寄りの値を、表示用のViewModelへ変換する。
+
+```text
+StudyLogSummary
+      ↓ toStudyLogSummaryViewModel
+StudyLogSummaryViewModel
+```
+
+取得失敗も、画面で表示するエラー状態へ変換する。
+
+```ts
+{
+  status: 'error',
+  message: '学習ログを読み込めませんでした。'
+}
+```
+
+つまり、このhookには次の3つの役割がある。
+
+1. 非同期処理の開始と完了をReactのstateで管理する
+2. Applicationの結果を`empty`や`success`などのUI状態へ分類する
+3. Domain寄りの値をViewModelへ変換する
+
+### 全体のつながり
+
+```text
+Repository
+   ↓ Domain型を返す
+Application
+   ↓ StudyLogSummaryを返す
+useStudyLogSummary
+   ↓ UI状態の判定とViewModel変換
+StudyLogPage
+   ↓ stateをpropsで渡す
+StudyLogView
+   ↓ 表示
+ユーザー
+```
+
+### 判断ルール
+
+- ApplicationはReactや画面表示を知らない
+- APIやApplicationの結果を、そのままUI状態だと考えない
+- UI固有の状態判定や表示用変換はUI層で行う
+- hookの責務が増えすぎた場合は、判定関数や変換関数を純粋関数として外へ分ける
 
 ---
 
