@@ -36,7 +36,20 @@ describe('createStudyLog', () => {
     })
   })
 
-  it.each([0, 1.5, 1441])(
+  it.each([1, 1440])(
+    '境界値の学習時間（%s分）を受け付ける',
+    (durationMinutes) => {
+      expect(
+        createStudyLog({
+          id: 'log-1',
+          topic: 'TypeScript',
+          durationMinutes,
+        }).durationMinutes,
+      ).toBe(durationMinutes)
+    },
+  )
+
+  it.each([0, -1, 1.5, 1441, Number.NaN, Number.POSITIVE_INFINITY])(
     '不正な学習時間（%s分）を受け付けない',
     (durationMinutes) => {
       expect(() =>
@@ -48,4 +61,24 @@ describe('createStudyLog', () => {
       ).toThrow('学習時間は1〜1440の整数で指定してください。')
     },
   )
+
+  it('空白だけのIDを受け付けない', () => {
+    expect(() =>
+      createStudyLog({
+        id: ' ',
+        topic: 'TypeScript',
+        durationMinutes: 30,
+      }),
+    ).toThrow('学習ログIDは必須です。')
+  })
+
+  it('空白だけの学習内容を受け付けない', () => {
+    expect(() =>
+      createStudyLog({
+        id: 'log-1',
+        topic: ' ',
+        durationMinutes: 30,
+      }),
+    ).toThrow('学習内容は必須です。')
+  })
 })

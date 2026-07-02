@@ -33,4 +33,54 @@ describe('toStudyLog', () => {
       },
     })
   })
+
+  it.each(['1', '1440'])(
+    '境界値の学習時間（%s分）をDomain型へ変換する',
+    (durationMinutes) => {
+      const result = toStudyLog('type-modeling', {
+        topic: 'TypeScript',
+        durationMinutes,
+      })
+
+      expect(result).toEqual({
+        ok: true,
+        studyLog: {
+          id: 'type-modeling',
+          topic: 'TypeScript',
+          durationMinutes: Number(durationMinutes),
+        },
+      })
+    },
+  )
+
+  it.each(['0', '-1', '1.5', '1441', 'abc'])(
+    '不正な学習時間（%s）をエラーにする',
+    (durationMinutes) => {
+      expect(
+        toStudyLog('type-modeling', {
+          topic: 'TypeScript',
+          durationMinutes,
+        }),
+      ).toEqual({
+        ok: false,
+        errors: {
+          durationMinutes: '1〜1440の整数で入力してください。',
+        },
+      })
+    },
+  )
+
+  it('空白だけの学習時間を必須エラーにする', () => {
+    expect(
+      toStudyLog('type-modeling', {
+        topic: 'TypeScript',
+        durationMinutes: ' ',
+      }),
+    ).toEqual({
+      ok: false,
+      errors: {
+        durationMinutes: '学習時間を入力してください。',
+      },
+    })
+  })
 })

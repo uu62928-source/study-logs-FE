@@ -193,4 +193,40 @@ describe('StudyLogPage', () => {
     expect(screen.getByText('学習時間を入力してください。')).toBeInTheDocument()
     expect(updateStudyLog).not.toHaveBeenCalled()
   })
+
+  it('保存に失敗したら入力値を残してエラーを表示する', async () => {
+    const user = userEvent.setup()
+    const studyLog = createStudyLog({
+      id: 'type-modeling',
+      topic: 'TypeScript',
+      durationMinutes: 30,
+    })
+    const getStudyLogSummary = () =>
+      Promise.resolve({
+        studyLogs: [studyLog],
+        totalMinutes: 30,
+      })
+    const updateStudyLog = vi.fn(() => Promise.reject(new Error('save failed')))
+
+    render(
+      <StudyLogPage
+        getStudyLogSummary={getStudyLogSummary}
+        updateStudyLog={updateStudyLog}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', { name: 'TypeScript 30分' }),
+    )
+    await user.click(screen.getByRole('button', { name: '編集する' }))
+    const topicInput = screen.getByLabelText('学習内容')
+    await user.clear(topicInput)
+    await user.type(topicInput, '型モデリング')
+    await user.click(screen.getByRole('button', { name: '保存する' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '学習ログを保存できませんでした。',
+    )
+    expect(screen.getByLabelText('学習内容')).toHaveValue('型モデリング')
+  })
 })
