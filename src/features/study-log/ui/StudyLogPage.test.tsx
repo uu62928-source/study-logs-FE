@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { createStudyLog } from '../domain/studyLog'
 import { StudyLogPage } from './StudyLogPage'
 
 describe('StudyLogPage', () => {
@@ -8,8 +9,12 @@ describe('StudyLogPage', () => {
     const getStudyLogSummary = () =>
       Promise.resolve({
         studyLogs: [
-          { id: '1', topic: 'React', durationMinutes: 45 },
-          { id: '2', topic: 'TypeScript', durationMinutes: 30 },
+          createStudyLog({ id: '1', topic: 'React', durationMinutes: 45 }),
+          createStudyLog({
+            id: '2',
+            topic: 'TypeScript',
+            durationMinutes: 30,
+          }),
         ],
         totalMinutes: 75,
       })

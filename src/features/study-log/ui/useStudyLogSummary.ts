@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react'
 
-import type {
-  GetStudyLogSummary,
-  StudyLogSummary,
-} from '../application/use-cases/getStudyLogSummary'
-
-type StudyLogSummaryState =
-  | Readonly<{ status: 'loading' }>
-  | Readonly<{ status: 'empty' }>
-  | Readonly<{ status: 'success'; summary: StudyLogSummary }>
-  | Readonly<{ status: 'error'; message: string }>
+import type { GetStudyLogSummary } from '../application/use-cases/getStudyLogSummary'
+import {
+  toStudyLogSummaryViewModel,
+  type StudyLogViewState,
+} from './studyLogViewModel'
 
 export function useStudyLogSummary(
   getStudyLogSummary: GetStudyLogSummary,
-): StudyLogSummaryState {
-  const [state, setState] = useState<StudyLogSummaryState>({
+): StudyLogViewState {
+  const [state, setState] = useState<StudyLogViewState>({
     status: 'loading',
   })
 
@@ -27,7 +22,10 @@ export function useStudyLogSummary(
           setState(
             summary.studyLogs.length === 0
               ? { status: 'empty' }
-              : { status: 'success', summary },
+              : {
+                  status: 'success',
+                  summary: toStudyLogSummaryViewModel(summary),
+                },
           )
         }
       })
