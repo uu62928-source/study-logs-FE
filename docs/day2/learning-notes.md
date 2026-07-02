@@ -295,6 +295,116 @@ StudyLogView
 
 ---
 
+## 編集機能における責務分担
+
+### 責務を分ける目的
+
+編集機能では、フォーム入力、入力値の検証、保存、再取得、画面表示という複数の処理が必要になる。
+
+これらを1つのコンポーネントへ集めると、入力ルールや保存方法を変更したときに、同じファイルの多くの箇所が影響を受ける。そこで、「何が変わったときに変更されるか」に基づいて責務を分ける。
+
+### 各ファイルが担当すること
+
+| ファイル                        | 担当すること                                         | 知らなくてよいこと                        |
+| ------------------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| `studyLogForm.ts`               | 入力途中の文字列を検証し、Domain型へ変換する         | React、保存方法、画面レイアウト           |
+| `StudyLogView.tsx`              | フィルタ、選択、フォーム状態、画面表示を扱う         | Repositoryの実装、保存先                  |
+| `StudyLogPage.tsx`              | UIと更新ユースケースを接続し、保存後に再読み込みする | 入力値の具体的な検証ルール、保存方法      |
+| `updateStudyLog.ts`             | 検証済みの学習ログを保存する処理を表す               | React、フォーム、Repositoryの具体的な実装 |
+| `StudyLogRepository.ts`         | 読み取りと書き込みに必要な契約を定義する             | メモリやAPIなどの具体的な保存方法         |
+| `InMemoryStudyLogRepository.ts` | メモリ上で学習ログを取得・更新する                   | 画面表示、フォーム、React                 |
+| `configureStudyLog.ts`          | Repositoryと各ユースケースを生成して組み合わせる     | UI上の操作や表示方法                      |
+
+### 入力から再表示までの流れ
+
+```text
+ユーザーがフォームへ入力
+        ↓
+StudyLogView
+Form型として入力途中の文字列を保持する
+        ↓
+studyLogForm
+入力値を検証してDomain型へ変換する
+        ↓
+StudyLogPage
+更新ユースケースを呼び出す
+        ↓
+updateStudyLog
+Repositoryのsave契約を呼び出す
+        ↓
+InMemoryStudyLogRepository
+メモリ上のデータを更新する
+        ↓
+StudyLogPage
+保存成功後にreloadする
+        ↓
+getStudyLogSummary
+更新後のデータを取得する
+        ↓
+ViewModelへ変換して画面を再表示する
+```
+
+重要なのは、画面が`InMemoryStudyLogRepository`を直接呼び出していない点である。UIは更新ユースケースだけを知り、更新ユースケースは`StudyLogWriter`という契約だけを知る。
+
+```text
+UI → UpdateStudyLog → StudyLogWriter ← InMemoryStudyLogRepository
+```
+
+将来、保存先をAPIへ変更しても、`StudyLogWriter`を実装する別のRepositoryへ差し替えればよい。フォームや画面は保存先の変更を知らなくてよい。
+
+### 読み取りと書き込みの契約を分ける理由
+
+Repositoryの契約は、利用側が必要とする操作ごとに分けている。
+
+```ts
+interface StudyLogReader {
+  findAll(): Promise<readonly StudyLog[]>
+}
+
+interface StudyLogWriter {
+  save(studyLog: StudyLog): Promise<void>
+}
+```
+
+取得ユースケースは`findAll`だけを必要とするため、`StudyLogReader`へ依存する。更新ユースケースは`save`だけを必要とするため、`StudyLogWriter`へ依存する。
+
+```text
+GetStudyLogSummary → StudyLogReader
+UpdateStudyLog     → StudyLogWriter
+```
+
+これにより、各ユースケースが使用しない操作まで知ることを避けられる。テストでも、対象のユースケースが必要とする小さな契約だけを用意すればよい。
+
+### `configureStudyLog`の役割
+
+Applicationのユースケースは、Repositoryのinterfaceだけへ依存しており、どの実装を使うか自分では決めない。
+
+`configureStudyLog`が具体的なRepositoryを作り、取得と更新のユースケースへ渡す。
+
+```ts
+const repository = new InMemoryStudyLogRepository(initialStudyLogs)
+
+return {
+  getStudyLogSummary: createGetStudyLogSummary(repository),
+  updateStudyLog: createUpdateStudyLog(repository),
+}
+```
+
+このように、具体的な実装を生成して組み合わせる場所をComposition Rootという。具体的な保存方法をこの場所へ集めることで、ApplicationやUIへInfrastructureの知識が広がることを防いでいる。
+
+### 変更理由から見た影響範囲
+
+- 入力エラーメッセージを変える：`studyLogForm.ts`
+- フォームの見た目を変える：`StudyLogView.tsx`
+- 保存後の画面遷移を変える：`StudyLogPage.tsx`
+- 更新処理の流れを変える：`updateStudyLog.ts`
+- 保存先をメモリからAPIへ変える：InfrastructureのRepositoryと`configureStudyLog.ts`
+- 学習時間の業務ルールを変える：Domainの`studyLog.ts`
+
+どの変更理由がどのファイルに対応するか説明できれば、責務分担が機能していると判断できる。
+
+---
+
 ## 試した型設計
 
 ### 対象
