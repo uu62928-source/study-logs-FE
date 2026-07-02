@@ -405,6 +405,238 @@ return {
 
 ---
 
+## branded typeと型テスト
+
+### branded typeが必要になる理由
+
+TypeScriptは、型の名前ではなく構造が同じかどうかを基準に代入可能性を判断する。
+
+例えば、次の2つは名前が違っても、どちらも実質的には`string`である。
+
+```ts
+type StudyLogId = string
+type UserId = string
+
+const userId: UserId = 'user-1'
+const studyLogId: StudyLogId = userId
+```
+
+この代入は型エラーにならない。しかし、ユーザーIDを学習ログIDとして使うことは、アプリの意味としては間違っている。
+
+同様に、学習時間と点数が両方とも`number`なら、値を取り違えてもTypeScriptには区別できない。
+
+```ts
+type StudyMinutes = number
+type Score = number
+
+const score: Score = 80
+const minutes: StudyMinutes = score
+```
+
+branded typeは、同じ`string`や`number`へ型上だけの名札を付け、このような意味の違いをTypeScriptに伝える仕組みである。
+
+### 今回のbranded type
+
+```ts
+declare const studyLogIdBrand: unique symbol
+
+type StudyLogId = string & {
+  readonly [studyLogIdBrand]: 'StudyLogId'
+}
+```
+
+この型は、次の2つを同時に満たす値を表す。
+
+```text
+stringである
+StudyLogIdという型上の名札を持つ
+```
+
+通常の`string`には名札がないため、そのまま代入できない。
+
+```ts
+const rawId: string = 'log-1'
+
+// 型エラー
+const id: StudyLogId = rawId
+```
+
+`StudyDurationMinutes`も同じ考え方である。
+
+```ts
+type StudyDurationMinutes = number & {
+  readonly [studyDurationMinutesBrand]: 'StudyDurationMinutes'
+}
+```
+
+普通の`number`と、検証済みの学習時間を型上で区別している。
+
+### 名札は実行時には存在しない
+
+brandはTypeScriptの型検査だけで使用され、JavaScriptとして実行するときには消える。
+
+```ts
+const studyLog = createStudyLog({
+  id: 'log-1',
+  topic: 'TypeScript',
+  durationMinutes: 30,
+})
+
+console.log(studyLog)
+```
+
+実行時の値は通常のオブジェクトである。
+
+```ts
+{
+  id: 'log-1',
+  topic: 'TypeScript',
+  durationMinutes: 30
+}
+```
+
+`id`へ特別なプロパティが追加されたり、`durationMinutes`が特殊な数値オブジェクトになったりするわけではない。
+
+そのため、branded type自身には「30が正しい学習時間か」を実行時に検証する能力はない。
+
+### 生成関数を通す理由
+
+外部から受け取った`string`や`number`は、最初は未検証の値である。
+
+```text
+フォーム・API・ファイル
+        ↓
+未検証のstring / number
+```
+
+`createStudyLog()`が値を検証し、正しい場合だけbrandを付ける。
+
+```ts
+if (
+  !Number.isInteger(durationMinutes) ||
+  durationMinutes <= 0 ||
+  durationMinutes > 24 * 60
+) {
+  throw new Error('学習時間は1〜1440の整数で指定してください。')
+}
+
+return {
+  id: normalizedId as StudyLogId,
+  topic: normalizedTopic,
+  durationMinutes: durationMinutes as StudyDurationMinutes,
+}
+```
+
+データの流れは次のようになる。
+
+```text
+未検証のnumber
+      ↓ createStudyLogで検証
+StudyDurationMinutes
+      ↓
+Domain内部では検証済みとして扱える
+```
+
+`as StudyDurationMinutes`は検証の代わりではない。直前の条件分岐で正しさを確認したうえで、「ここから先は検証済みとして扱う」とTypeScriptへ伝えている。
+
+アプリのさまざまな場所で直接`as StudyDurationMinutes`と書くと、検証を通さず名札だけを付けられてしまう。そのため、brandを付ける型アサーションは生成関数の中へ限定する。
+
+### 型テストが確認していること
+
+`studyLog.type-test.ts`では、未検証の値をbranded typeへ代入できないことを確認している。
+
+まず、`@ts-expect-error`がない場合を考える。
+
+```ts
+const invalidId: StudyLog['id'] = 'plain-string'
+```
+
+`StudyLog['id']`は`StudyLogId`を意味する。右側は普通の`string`なので、`tsc`は型エラーを出す。
+
+```text
+stringはStudyLogIdへ代入できない
+```
+
+これは、未検証のIDがDomainへ入ることを型が防いでいる証拠である。
+
+### `@ts-expect-error`の意味
+
+型テストでは、意図的に間違ったコードを書く。
+
+```ts
+// @ts-expect-error 検証前のstringはStudyLogIdとして扱えない
+const invalidId: StudyLog['id'] = 'plain-string'
+```
+
+`@ts-expect-error`は「エラーを無視する」というより、「次の行は型エラーになるはず」とTypeScriptへ宣言するコメントである。
+
+結果は次のようになる。
+
+```text
+次の行が型エラーになる
+    → 期待どおりなのでbuild成功
+
+次の行が型エラーにならない
+    → @ts-expect-errorが不要になったためbuild失敗
+```
+
+例えば、誤って`StudyLogId`を通常の`string`へ戻すと、代入が可能になる。
+
+```ts
+type StudyLogId = string
+```
+
+すると型エラーが発生しなくなり、TypeScriptが次のエラーを出す。
+
+```text
+Unused '@ts-expect-error' directive
+```
+
+これにより、「未検証の値を拒否する」という型の制約が弱くなったことをbuildで検出できる。
+
+### `void invalidId`の意味
+
+型テスト内の次の行は、branded typeの仕組みとは関係がない。
+
+```ts
+void invalidId
+```
+
+このプロジェクトでは未使用変数をエラーにする設定が有効である。そのため、変数を型テストで使用済みにする目的で書いている。
+
+実行時に重要な処理を行っているわけではない。
+
+### 実行時テストとの役割分担
+
+branded typeの型テストと、生成関数の実行時テストは別の問題を確認している。
+
+| 確認すること                                         | 検証方法                 |
+| ---------------------------------------------------- | ------------------------ |
+| 普通の`string`を`StudyLogId`へ代入できない           | `tsc`による型テスト      |
+| 普通の`number`を`StudyDurationMinutes`へ代入できない | `tsc`による型テスト      |
+| `0`や`1441`を学習時間として受け付けない              | Vitestによる実行時テスト |
+| `1`と`1440`を正しい境界値として受け付ける            | Vitestによる実行時テスト |
+
+```text
+型テスト
+「検証前と検証後の型を混同できないか」
+
+実行時テスト
+「生成関数の検証ルールは正しいか」
+```
+
+どちらか一方だけでは不十分である。branded typeだけでは外部入力の値を検証できず、生成関数だけでは未検証の値と検証済みの値を型上で区別できない。
+
+### branded typeを使う判断基準
+
+- 構造は同じだが、取り違えると不具合になる値に使う
+- ID、金額、単位、検証済み文字列などが候補になる
+- 生成・検証する入口を限定できる場合に使う
+- すべての`string`や`number`へ機械的に付けない
+- 単純な型で十分なら、型の複雑さを増やさない
+
+---
+
 ## 試した型設計
 
 ### 対象
