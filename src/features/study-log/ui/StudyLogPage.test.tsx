@@ -33,4 +33,21 @@ describe('StudyLogPage', () => {
       '学習ログを読み込めませんでした。',
     )
   })
+
+  it('学習ログが0件なら空状態を表示する', async () => {
+    const getStudyLogSummary = () =>
+      Promise.resolve({
+        studyLogs: [],
+        totalMinutes: 0,
+      })
+
+    render(<StudyLogPage getStudyLogSummary={getStudyLogSummary} />)
+
+    expect(
+      await screen.findByText(
+        'まだ学習ログがありません。最初の記録を追加しましょう。',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
 })

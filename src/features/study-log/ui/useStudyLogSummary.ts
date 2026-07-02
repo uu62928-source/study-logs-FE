@@ -7,6 +7,7 @@ import type {
 
 type StudyLogSummaryState =
   | Readonly<{ status: 'loading' }>
+  | Readonly<{ status: 'empty' }>
   | Readonly<{ status: 'success'; summary: StudyLogSummary }>
   | Readonly<{ status: 'error'; message: string }>
 
@@ -23,7 +24,11 @@ export function useStudyLogSummary(
     void getStudyLogSummary()
       .then((summary) => {
         if (isActive) {
-          setState({ status: 'success', summary })
+          setState(
+            summary.studyLogs.length === 0
+              ? { status: 'empty' }
+              : { status: 'success', summary },
+          )
         }
       })
       .catch(() => {

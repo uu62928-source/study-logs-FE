@@ -49,8 +49,7 @@ type StudyLogViewState =
 
 ```ts
 type ActionProps =
-  | { variant: 'button'; onClick: () => void }
-  | { variant: 'link'; href: string }
+  { variant: 'button'; onClick: () => void } | { variant: 'link'; href: string }
 ```
 
 `variant: 'button'`と`href`のような不正な組み合わせを型エラーにできることを確認する。

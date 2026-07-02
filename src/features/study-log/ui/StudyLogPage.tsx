@@ -11,7 +11,7 @@ export function StudyLogPage({ getStudyLogSummary }: StudyLogPageProps) {
 
   return (
     <main className="page">
-      <p className="eyebrow">Day 1 · Architecture</p>
+      <p className="eyebrow">Day 2 · Type Modeling</p>
       <h1>学習ログ</h1>
       <p className="lead">
         学んだことと時間を記録し、継続を見える形にするためのアプリです。
@@ -24,6 +24,10 @@ export function StudyLogPage({ getStudyLogSummary }: StudyLogPageProps) {
         {state.status === 'loading' && <p>読み込み中...</p>}
 
         {state.status === 'error' && <p role="alert">{state.message}</p>}
+
+        {state.status === 'empty' && (
+          <p>まだ学習ログがありません。最初の記録を追加しましょう。</p>
+        )}
 
         {state.status === 'success' && (
           <>
