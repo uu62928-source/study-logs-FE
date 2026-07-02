@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
 import {
@@ -6,12 +6,17 @@ import {
   type StudyLogFormErrors,
   type StudyLogFormValues,
 } from './studyLogForm'
-import type { StudyLogViewState } from './studyLogViewModel'
+import type {
+  StudyLogListItemViewModel,
+  StudyLogViewState,
+} from './studyLogViewModel'
 
-type StudyLogViewProps = Readonly<{
-  state: StudyLogViewState
-  onSaveStudyLog: (studyLog: StudyLog) => Promise<void>
-}>
+type StudyLogViewProps =
+  | Exclude<StudyLogViewState, { status: 'success' }>
+  | (Extract<StudyLogViewState, { status: 'success' }> &
+      Readonly<{
+        onSaveStudyLog: (studyLog: StudyLog) => Promise<void>
+      }>)
 
 type EditorState =
   | Readonly<{ status: 'closed' }>
@@ -33,32 +38,28 @@ type EditorState =
       message: string
     }>
 
-export function StudyLogView({ state, onSaveStudyLog }: StudyLogViewProps) {
+export function StudyLogView(props: StudyLogViewProps) {
   const [filterQuery, setFilterQuery] = useState('')
   const [selectedStudyLogId, setSelectedStudyLogId] = useState<string | null>(
     null,
   )
   const [editor, setEditor] = useState<EditorState>({ status: 'closed' })
 
-  const filteredStudyLogs = useMemo(() => {
-    if (state.status !== 'success') {
-      return []
-    }
+  const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
+  let filteredStudyLogs: readonly StudyLogListItemViewModel[] = []
 
-    const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
-
-    if (normalizedQuery.length === 0) {
-      return state.summary.studyLogs
-    }
-
-    return state.summary.studyLogs.filter((studyLog) =>
-      studyLog.topic.toLocaleLowerCase().includes(normalizedQuery),
-    )
-  }, [filterQuery, state])
+  if (props.status === 'success') {
+    filteredStudyLogs =
+      normalizedQuery.length === 0
+        ? props.summary.studyLogs
+        : props.summary.studyLogs.filter((studyLog) =>
+            studyLog.topic.toLocaleLowerCase().includes(normalizedQuery),
+          )
+  }
 
   const selectedStudyLog =
-    state.status === 'success'
-      ? state.summary.studyLogs.find(
+    props.status === 'success'
+      ? props.summary.studyLogs.find(
           (studyLog) => studyLog.id === selectedStudyLogId,
         )
       : undefined
@@ -85,7 +86,11 @@ export function StudyLogView({ state, onSaveStudyLog }: StudyLogViewProps) {
   }
 
   function updateFormValue(field: keyof StudyLogFormValues, value: string) {
-    if (editor.status === 'closed' || editor.status === 'saving') {
+    if (
+      props.status !== 'success' ||
+      editor.status === 'closed' ||
+      editor.status === 'saving'
+    ) {
       return
     }
 
@@ -103,10 +108,15 @@ export function StudyLogView({ state, onSaveStudyLog }: StudyLogViewProps) {
   async function submitEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (editor.status === 'closed' || editor.status === 'saving') {
+    if (
+      props.status !== 'success' ||
+      editor.status === 'closed' ||
+      editor.status === 'saving'
+    ) {
       return
     }
 
+    const { onSaveStudyLog } = props
     const result = toStudyLog(editor.studyLogId, editor.values)
 
     if (!result.ok) {
@@ -150,15 +160,15 @@ export function StudyLogView({ state, onSaveStudyLog }: StudyLogViewProps) {
       <section className="card" aria-labelledby="today-heading">
         <h2 id="today-heading">これまでの記録</h2>
 
-        {state.status === 'loading' && <p>読み込み中...</p>}
+        {props.status === 'loading' && <p>読み込み中...</p>}
 
-        {state.status === 'error' && <p role="alert">{state.message}</p>}
+        {props.status === 'error' && <p role="alert">{props.message}</p>}
 
-        {state.status === 'empty' && (
+        {props.status === 'empty' && (
           <p>まだ学習ログがありません。最初の記録を追加しましょう。</p>
         )}
 
-        {state.status === 'success' && (
+        {props.status === 'success' && (
           <>
             <label className="filter-field">
               <span>学習内容を絞り込む</span>
@@ -191,7 +201,7 @@ export function StudyLogView({ state, onSaveStudyLog }: StudyLogViewProps) {
             )}
 
             <p className="total">
-              合計 <strong>{state.summary.totalDurationLabel}</strong>
+              合計 <strong>{props.summary.totalDurationLabel}</strong>
             </p>
 
             <section

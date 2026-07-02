@@ -1,5 +1,6 @@
 import type { GetStudyLogSummary } from '../application/use-cases/getStudyLogSummary'
 import type { UpdateStudyLog } from '../application/use-cases/updateStudyLog'
+import type { StudyLog } from '../domain/studyLog'
 import { StudyLogView } from './StudyLogView'
 import { useStudyLogSummary } from './useStudyLogSummary'
 import './StudyLogPage.css'
@@ -15,12 +16,14 @@ export function StudyLogPage({
 }: StudyLogPageProps) {
   const { state, reload } = useStudyLogSummary(getStudyLogSummary)
 
-  async function handleSaveStudyLog(
-    studyLog: Parameters<UpdateStudyLog>[0],
-  ): Promise<void> {
+  async function handleSaveStudyLog(studyLog: StudyLog): Promise<void> {
     await updateStudyLog(studyLog)
     reload()
   }
 
-  return <StudyLogView state={state} onSaveStudyLog={handleSaveStudyLog} />
+  if (state.status === 'success') {
+    return <StudyLogView {...state} onSaveStudyLog={handleSaveStudyLog} />
+  }
+
+  return <StudyLogView {...state} />
 }
