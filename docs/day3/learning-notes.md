@@ -165,4 +165,67 @@ studyLogInteractionReducer(state, event)
 
 reducerの単体テストを追加し、ログ選択、編集開始、入力変更、保存失敗、再保存、キャンセル、保存中の不正なキャンセルを確認した。
 
+### custom hookへ保存処理を切り出す
+
+保存処理をcustom hookへ移すと、UIは保存方法を知らず、「ユーザーが保存を要求した」という意図だけをhookへ伝えられる。
+
+入力値はcustom hookが管理する`interaction.editor.values`にあるため、送信時にUIから改めて保存データを渡す必要はない。
+
+```tsx
+<form
+  onSubmit={(event) => {
+    event.preventDefault()
+    void submitEdit()
+  }}
+>
+```
+
+custom hookは、現在の入力値の検証と変換、状態遷移、保存処理、保存結果の反映を担当する。
+
+```ts
+async function submitEdit() {
+  // 1. 現在の入力値を検証・変換
+  const result = toStudyLog(editor.studyLogId, editor.values)
+
+  // 2. 保存中へ遷移
+  dispatch({ type: 'saveStarted' })
+
+  // 3. 保存の副作用
+  await onSaveStudyLog(result.studyLog)
+
+  // 4. 結果を状態へ反映
+  dispatch({ type: 'saveSucceeded' })
+}
+```
+
+責務は次のように分ける。
+
+```text
+UI：何が操作されたかを通知し、stateに応じて表示する
+custom hook：操作をどう処理するか決め、副作用を実行する
+reducer：現在のstateとeventから次のstateを計算する
+Repository：実際にデータを保存する
+```
+
+UIには、stateに応じた表示、ユーザー入力の通知、ボタンやフォーム操作の通知だけを残す。
+
+`useStudyLogInteraction`を実装し、`StudyLogView`から`useReducer`、`dispatch`、入力値の検証、保存成功・失敗の処理を移した。
+
+hookから`dispatch`を直接公開せず、ユーザーの意図を表す操作を公開した。
+
+```ts
+const {
+  interaction,
+  selectStudyLog,
+  startEditing,
+  changeFormValue,
+  submitEdit,
+  cancelEditing,
+} = useStudyLogInteraction(saveStudyLog)
+```
+
+これにより、UIはeventの種類や送信順序を知らなくてよくなった。hookはRepositoryを直接importせず、保存関数を引数として受け取るため、保存先の実装と疎結合に保てる。
+
+hookのテストでは、保存成功、入力値の検証失敗、保存失敗時の入力値保持を確認した。
+
 ## 疑問・確認したいこと

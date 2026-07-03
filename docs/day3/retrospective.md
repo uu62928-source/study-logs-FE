@@ -26,6 +26,9 @@
 - ログ選択、編集開始、入力変更、バリデーション失敗、保存開始、保存成功、保存失敗、編集キャンセルの状態遷移
 - reducerの状態遷移テスト7件
 - 保存失敗後に入力を変えず再保存できる遷移
+- `useStudyLogInteraction`による状態管理、入力検証、保存処理の集約
+- custom hookの保存成功、検証失敗、保存失敗のテスト3件
+- `StudyLogView`から`dispatch`と保存手順を除去
 
 ## うまくいったこと
 
@@ -38,6 +41,10 @@
 - `interaction`とreducer内の`state`が、Reactによってつながる同じ状態だと理解できた
 - reducerをUIから分離したことで、Reactコンポーネントを介さず状態遷移をテストできた
 - `npm run test`、`npm run lint`、`npm run build`がすべて成功した
+- UIは操作を通知し、custom hookは処理手順、reducerは状態遷移、Repositoryは保存を担当する形に分けられた
+- custom hookへ`dispatch`を公開せず、`submitEdit`などの意図を表す操作だけを公開できた
+- 保存関数を外から受け取ることで、custom hookを特定のRepository実装から切り離せた
+- custom hook追加後も全45件のテスト、lint、buildが成功した
 
 ## 次回の課題
 

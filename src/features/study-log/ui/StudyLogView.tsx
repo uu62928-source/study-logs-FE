@@ -1,18 +1,12 @@
-import { useReducer, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
-import {
-  toStudyLog,
-  type StudyLogFormValues,
-} from './studyLogForm'
-import {
-  initialStudyLogInteractionState,
-  studyLogInteractionReducer,
-} from './studyLogInteraction'
+import type { StudyLogFormValues } from './studyLogForm'
 import type {
   StudyLogListItemViewModel,
   StudyLogViewState,
 } from './studyLogViewModel'
+import { useStudyLogInteraction } from './useStudyLogInteraction'
 
 type StudyLogViewProps =
   | Exclude<StudyLogViewState, { status: 'success' }>
@@ -23,9 +17,15 @@ type StudyLogViewProps =
 
 export function StudyLogView(props: StudyLogViewProps) {
   const [filterQuery, setFilterQuery] = useState('')
-  const [interaction, dispatch] = useReducer(
-    studyLogInteractionReducer,
-    initialStudyLogInteractionState,
+  const {
+    interaction,
+    selectStudyLog,
+    startEditing: beginEditing,
+    changeFormValue,
+    submitEdit: saveEdit,
+    cancelEditing,
+  } = useStudyLogInteraction(
+    props.status === 'success' ? props.onSaveStudyLog : undefined,
   )
 
   const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
@@ -47,71 +47,24 @@ export function StudyLogView(props: StudyLogViewProps) {
         )
       : undefined
 
-  function selectStudyLog(studyLogId: string) {
-    dispatch({ type: 'studyLogSelected', studyLogId })
-  }
-
   function startEditing() {
     if (selectedStudyLog === undefined) {
       return
     }
 
-    dispatch({
-      type: 'editStarted',
-      studyLogId: selectedStudyLog.id,
-      values: {
-        topic: selectedStudyLog.topic,
-        durationMinutes: selectedStudyLog.durationInputValue,
-      },
+    beginEditing(selectedStudyLog.id, {
+      topic: selectedStudyLog.topic,
+      durationMinutes: selectedStudyLog.durationInputValue,
     })
   }
 
   function updateFormValue(field: keyof StudyLogFormValues, value: string) {
-    if (
-      props.status !== 'success' ||
-      interaction.editor.status === 'closed' ||
-      interaction.editor.status === 'saving'
-    ) {
-      return
-    }
-
-    dispatch({ type: 'formValueChanged', field, value })
+    changeFormValue(field, value)
   }
 
   async function submitEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
-    if (
-      props.status !== 'success' ||
-      interaction.editor.status === 'closed' ||
-      interaction.editor.status === 'saving'
-    ) {
-      return
-    }
-
-    const { onSaveStudyLog } = props
-    const editor = interaction.editor
-    const result = toStudyLog(editor.studyLogId, editor.values)
-
-    if (!result.ok) {
-      dispatch({
-        type: 'validationFailed',
-        errors: result.errors,
-      })
-      return
-    }
-
-    dispatch({ type: 'saveStarted' })
-
-    try {
-      await onSaveStudyLog(result.studyLog)
-      dispatch({ type: 'saveSucceeded' })
-    } catch {
-      dispatch({
-        type: 'saveFailed',
-        message: '学習ログを保存できませんでした。',
-      })
-    }
+    await saveEdit()
   }
 
   return (
@@ -265,7 +218,7 @@ export function StudyLogView(props: StudyLogViewProps) {
                         <button
                           type="button"
                           disabled={interaction.editor.status === 'saving'}
-                          onClick={() => dispatch({ type: 'editCancelled' })}
+                          onClick={cancelEditing}
                         >
                           キャンセル
                         </button>
