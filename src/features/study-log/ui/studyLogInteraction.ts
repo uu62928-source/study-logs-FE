@@ -76,6 +76,13 @@ export function studyLogInteractionReducer(
 ): StudyLogInteractionState {
   switch (event.type) {
     case 'studyLogSelected':
+      if (
+        state.editor.status === 'saving' ||
+        state.deletion.status === 'deleting'
+      ) {
+        return state
+      }
+
       return {
         ...state,
         selectedStudyLogId: event.studyLogId,
@@ -84,6 +91,13 @@ export function studyLogInteractionReducer(
       }
 
     case 'creationStarted':
+      if (
+        state.editor.status === 'saving' ||
+        state.deletion.status === 'deleting'
+      ) {
+        return state
+      }
+
       return {
         ...state,
         selectedStudyLogId: null,
@@ -103,8 +117,16 @@ export function studyLogInteractionReducer(
       }
 
     case 'editStarted':
+      if (
+        state.editor.status === 'saving' ||
+        state.deletion.status === 'deleting'
+      ) {
+        return state
+      }
+
       return {
         ...state,
+        selectedStudyLogId: event.studyLogId,
         deletion: { status: 'idle' },
         editor: {
           status: 'editing',
@@ -211,7 +233,8 @@ export function studyLogInteractionReducer(
     case 'deletionStarted':
       if (
         state.editor.status !== 'closed' ||
-        state.deletion.status === 'deleting'
+        state.deletion.status === 'deleting' ||
+        state.selectedStudyLogId !== event.studyLogId
       ) {
         return state
       }

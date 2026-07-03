@@ -71,7 +71,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
       }),
     ).toEqual({
-      selectedStudyLogId: null,
+      selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'editing',
         target: updateTarget,
@@ -200,6 +200,58 @@ describe('studyLogInteractionReducer', () => {
     expect(studyLogInteractionReducer(state, { type: 'editCancelled' })).toBe(
       state,
     )
+  })
+
+  it('保存中は別の学習ログを選択できない', () => {
+    const state: StudyLogInteractionState = {
+      selectedStudyLogId: 'type-modeling',
+      editor: {
+        status: 'saving',
+        target: updateTarget,
+        values: formValues,
+      },
+      deletion: idleDeletion,
+    }
+
+    expect(
+      studyLogInteractionReducer(state, {
+        type: 'studyLogSelected',
+        studyLogId: 'another-log',
+      }),
+    ).toBe(state)
+  })
+
+  it('削除中は新規作成を開始できない', () => {
+    const state: StudyLogInteractionState = {
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: {
+        status: 'deleting',
+        studyLogId: 'type-modeling',
+      },
+    }
+
+    expect(
+      studyLogInteractionReducer(state, {
+        type: 'creationStarted',
+        newStudyLogId: 'new-study-log',
+      }),
+    ).toBe(state)
+  })
+
+  it('選択中ではない学習ログの削除を開始できない', () => {
+    const state: StudyLogInteractionState = {
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: idleDeletion,
+    }
+
+    expect(
+      studyLogInteractionReducer(state, {
+        type: 'deletionStarted',
+        studyLogId: 'another-log',
+      }),
+    ).toBe(state)
   })
 
   it('削除成功時に選択を解除する', () => {

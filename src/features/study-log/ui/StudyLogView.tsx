@@ -118,6 +118,9 @@ export function StudyLogView(props: StudyLogViewProps) {
   })
 
   const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
+  const isMutationPending =
+    interaction.editor.status === 'saving' ||
+    interaction.deletion.status === 'deleting'
   let visibleStudyLogs: readonly StudyLogListItemViewModel[] = []
 
   if (props.status === 'success') {
@@ -179,7 +182,11 @@ export function StudyLogView(props: StudyLogViewProps) {
 
         {(props.status === 'empty' || props.status === 'success') &&
           interaction.editor.status === 'closed' && (
-            <button type="button" onClick={startCreating}>
+            <button
+              type="button"
+              disabled={isMutationPending}
+              onClick={startCreating}
+            >
               新しい学習ログを追加
             </button>
           )}
@@ -237,6 +244,7 @@ export function StudyLogView(props: StudyLogViewProps) {
                     <button
                       type="button"
                       className="study-log-item"
+                      disabled={isMutationPending}
                       aria-pressed={
                         studyLog.id === interaction.selectedStudyLogId
                       }
@@ -270,7 +278,11 @@ export function StudyLogView(props: StudyLogViewProps) {
                   {interaction.editor.status === 'closed' ? (
                     <>
                       <div className="form-actions">
-                        <button type="button" onClick={startEditing}>
+                        <button
+                          type="button"
+                          disabled={isMutationPending}
+                          onClick={startEditing}
+                        >
                           編集する
                         </button>
                         <button
