@@ -59,6 +59,9 @@
 - 学習日のDomain、DTO、ViewModel間の変換
 - localStorage version 1からversion 2への移行
 - 旧データの「日付未設定」表示
+- localStorageでは楽観的更新を採用せず、保存後に再読み込みする判断
+- API版で必要になる削除前データ、元の位置、選択状態、操作IDのロールバック設計
+- 現在のコンポーネント階層ではContextを採用しない判断
 
 ## うまくいったこと
 
@@ -102,6 +105,8 @@
 
 ## 次回の課題
 
-- client state、server state、form state、URL stateの違いをさらに整理する
-- 現在のイベントを列挙し、どの値が同時に変化するか確認する
-- `editor`を`useState`で管理する場合と`useReducer`で管理する場合を比較する
+- APIから取得するserver stateとclient stateを分ける
+- APIレスポンスをDTOとして受け取り、runtime validationを行う
+- API DTOからDomain型、ViewModelへ変換する境界を設計する
+- 通信時間が目立つ場合に楽観的更新とロールバックを再検討する
+- 複数タブでlocalStorageを同時更新した場合の競合は、単一タブ前提を外す段階で対応する
