@@ -311,4 +311,31 @@ type DeletionState =
 
 Repository、use case、reducer、custom hook、画面の各層で削除成功と削除失敗をテストした。
 
+### 並び替え結果はderived stateとして扱う
+
+並び替え後の一覧は、元の学習ログ一覧と選択中の並び順から計算できる。そのため、並び替え結果をstateへ保存せず、`sortOrder`だけをstateとして保持する。
+
+```ts
+type StudyLogSortOrder =
+  | 'original'
+  | 'topic-asc'
+  | 'duration-desc'
+```
+
+`sortOrder`は単独で変化する単純な値なので、編集や削除のreducerへ追加せず`useState`で管理した。将来、検索条件とともにURL stateへ移す予定である。
+
+配列の`.sort()`は呼び出した配列自体を書き換える。propsの配列を直接並び替えると元の登録順を失い、同じ配列を参照する別の処理にも影響するため、コピーしてから並び替える。
+
+```ts
+const sortedStudyLogs = [...studyLogs].sort(compareFunction)
+```
+
+並び替え処理は`sortStudyLogs`という純粋関数へ分離し、次を実装した。
+
+- 登録順
+- 学習内容の昇順
+- 学習時間の降順
+
+フィルタ後の一覧を並び替えることで、検索条件と並び順を組み合わせた表示用一覧をderived stateとして計算する。テストでは並び順に加え、元の配列が変更されていないことも確認した。
+
 ## 疑問・確認したいこと
