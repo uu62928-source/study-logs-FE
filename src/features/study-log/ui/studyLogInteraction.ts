@@ -41,7 +41,11 @@ export type StudyLogInteractionState = Readonly<{
 
 export type StudyLogInteractionEvent =
   | Readonly<{ type: 'studyLogSelected'; studyLogId: string }>
-  | Readonly<{ type: 'creationStarted'; newStudyLogId: string }>
+  | Readonly<{
+      type: 'creationStarted'
+      newStudyLogId: string
+      studiedOn: string
+    }>
   | Readonly<{
       type: 'editStarted'
       studyLogId: string
@@ -111,6 +115,7 @@ export function studyLogInteractionReducer(
           values: {
             topic: '',
             durationMinutes: '',
+            studiedOn: event.studiedOn,
           },
           errors: {},
         },

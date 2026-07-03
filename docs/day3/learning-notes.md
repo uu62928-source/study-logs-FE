@@ -415,4 +415,24 @@ URLはReactの外部にある状態なので、`useSyncExternalStore`で`window.
 
 テストではURLからの初期値、検索・並び順の書き換え、既定値の削除、不正値、ブラウザ履歴による変更を確認した。
 
+### 学習日をForm、Domain、DTO、ViewModelで分ける
+
+フォーム入力中の日付は空文字や不完全な値を含むため、検証前は`string`として扱う。保存時に形式と実在する日付かを検証し、成功した値だけをbranded typeの`StudyDate`へ変換する。
+
+```text
+Form: studiedOn: string
+  ↓ 必須、YYYY-MM-DD、実在日付を検証
+Domain: studiedOn: StudyDate
+  ↓ 保存形式へ変換
+DTO: studiedOn: string | null
+  ↓ 表示用へ変換
+ViewModel: studiedOnLabel / studiedOnInputValue
+```
+
+正規表現だけでは`2026-02-31`も通るため、年月日からUTCの日付を作り、元の年月日と一致するか確認する。新規作成時の初期値はcustom hookでローカル時間から作り、UTC基準の`toISOString()`による日付ずれを避ける。今日の日付を返す関数はテスト時に固定値を注入できる。
+
+既存のlocalStorage version 1には日付がない。事実と異なる日付を自動で付けず、version 2へ読み込む際に`studiedOn: null`として移行し、画面では「日付未設定」と表示する。新規作成と編集フォームでは日付を必須にする。
+
+Domainの日付検証、フォームの必須・実在日付検証、ViewModelの表示、custom hookの今日の日付、localStorage version 1の移行をテストした。
+
 ## 疑問・確認したいこと

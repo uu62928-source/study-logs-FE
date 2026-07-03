@@ -10,6 +10,7 @@ import {
 const formValues = {
   topic: 'TypeScript',
   durationMinutes: '30',
+  studiedOn: '2026-07-03',
 }
 const updateTarget: EditorTarget = {
   mode: 'update',
@@ -23,6 +24,7 @@ describe('studyLogInteractionReducer', () => {
       studyLogInteractionReducer(initialStudyLogInteractionState, {
         type: 'creationStarted',
         newStudyLogId: 'new-study-log',
+        studiedOn: '2026-07-03',
       }),
     ).toEqual({
       selectedStudyLogId: null,
@@ -32,7 +34,11 @@ describe('studyLogInteractionReducer', () => {
           mode: 'create',
           newStudyLogId: 'new-study-log',
         },
-        values: { topic: '', durationMinutes: '' },
+        values: {
+          topic: '',
+          durationMinutes: '',
+          studiedOn: '2026-07-03',
+        },
         errors: {},
       },
       deletion: idleDeletion,
@@ -235,6 +241,7 @@ describe('studyLogInteractionReducer', () => {
       studyLogInteractionReducer(state, {
         type: 'creationStarted',
         newStudyLogId: 'new-study-log',
+        studiedOn: '2026-07-03',
       }),
     ).toBe(state)
   })

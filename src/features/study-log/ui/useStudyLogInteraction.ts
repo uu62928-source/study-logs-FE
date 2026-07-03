@@ -11,12 +11,14 @@ import {
 type SaveStudyLog = (studyLog: StudyLog) => Promise<void>
 type DeleteStudyLog = (studyLogId: string) => Promise<void>
 type CreateId = () => string
+type GetToday = () => string
 
 type UseStudyLogInteractionDependencies = Readonly<{
   addStudyLog: SaveStudyLog
   deleteStudyLog: DeleteStudyLog
   updateStudyLog: SaveStudyLog
   createId?: CreateId
+  getToday?: GetToday
 }>
 
 type UseStudyLogInteractionResult = Readonly<{
@@ -35,6 +37,13 @@ export function useStudyLogInteraction({
   deleteStudyLog,
   updateStudyLog,
   createId = () => crypto.randomUUID(),
+  getToday = () => {
+    const now = new Date()
+    const year = String(now.getFullYear())
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  },
 }: UseStudyLogInteractionDependencies): UseStudyLogInteractionResult {
   const [interaction, dispatch] = useReducer(
     studyLogInteractionReducer,
@@ -49,6 +58,7 @@ export function useStudyLogInteraction({
     dispatch({
       type: 'creationStarted',
       newStudyLogId: createId(),
+      studiedOn: getToday(),
     })
   }
 

@@ -1,8 +1,13 @@
-import { createStudyLog, type StudyLog } from '../domain/studyLog'
+import {
+  createStudyDate,
+  createStudyLog,
+  type StudyLog,
+} from '../domain/studyLog'
 
 export type StudyLogFormValues = Readonly<{
   topic: string
   durationMinutes: string
+  studiedOn: string
 }>
 
 export type StudyLogFormErrors = Readonly<
@@ -35,12 +40,27 @@ export function toStudyLog(
     errors.durationMinutes = '1〜1440の整数で入力してください。'
   }
 
+  if (values.studiedOn.length === 0) {
+    errors.studiedOn = '学習日を入力してください。'
+  } else {
+    try {
+      createStudyDate(values.studiedOn)
+    } catch {
+      errors.studiedOn = '実在する日付を入力してください。'
+    }
+  }
+
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors }
   }
 
   return {
     ok: true,
-    studyLog: createStudyLog({ id, topic, durationMinutes }),
+    studyLog: createStudyLog({
+      id,
+      topic,
+      durationMinutes,
+      studiedOn: values.studiedOn,
+    }),
   }
 }

@@ -11,10 +11,11 @@ type StoredStudyLogDto = Readonly<{
   id: string
   topic: string
   durationMinutes: number
+  studiedOn: string | null
 }>
 
 type StoredStudyLogsDto = Readonly<{
-  version: 1
+  version: 2
   studyLogs: readonly StoredStudyLogDto[]
 }>
 
@@ -22,12 +23,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function toStudyLog(value: unknown): StudyLog {
+function toStudyLog(value: unknown, version: 1 | 2): StudyLog {
   if (
     !isRecord(value) ||
     typeof value.id !== 'string' ||
     typeof value.topic !== 'string' ||
-    typeof value.durationMinutes !== 'number'
+    typeof value.durationMinutes !== 'number' ||
+    (version === 2 &&
+      value.studiedOn !== null &&
+      typeof value.studiedOn !== 'string')
   ) {
     throw new Error('保存された学習ログの形式が不正です。')
   }
@@ -37,6 +41,11 @@ function toStudyLog(value: unknown): StudyLog {
       id: value.id,
       topic: value.topic,
       durationMinutes: value.durationMinutes,
+      studiedOn:
+        version === 2 &&
+        (typeof value.studiedOn === 'string' || value.studiedOn === null)
+          ? value.studiedOn
+          : null,
     })
   } catch {
     throw new Error('保存された学習ログの形式が不正です。')
@@ -46,24 +55,27 @@ function toStudyLog(value: unknown): StudyLog {
 function deserializeStudyLogs(value: string): readonly StudyLog[] {
   const parsed: unknown = JSON.parse(value)
 
-  if (
-    !isRecord(parsed) ||
-    parsed.version !== 1 ||
-    !Array.isArray(parsed.studyLogs)
-  ) {
+  if (!isRecord(parsed)) {
     throw new Error('保存された学習ログの形式が不正です。')
   }
 
-  return parsed.studyLogs.map(toStudyLog)
+  const version = parsed.version
+
+  if ((version !== 1 && version !== 2) || !Array.isArray(parsed.studyLogs)) {
+    throw new Error('保存された学習ログの形式が不正です。')
+  }
+
+  return parsed.studyLogs.map((studyLog) => toStudyLog(studyLog, version))
 }
 
 function serializeStudyLogs(studyLogs: readonly StudyLog[]): string {
   const dto: StoredStudyLogsDto = {
-    version: 1,
+    version: 2,
     studyLogs: studyLogs.map((studyLog) => ({
       id: studyLog.id,
       topic: studyLog.topic,
       durationMinutes: studyLog.durationMinutes,
+      studiedOn: studyLog.studiedOn,
     })),
   }
 

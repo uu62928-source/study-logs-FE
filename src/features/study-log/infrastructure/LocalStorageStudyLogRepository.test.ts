@@ -127,9 +127,40 @@ describe('LocalStorageStudyLogRepository', () => {
     )
   })
 
+  it('version 1の学習ログを日付未設定として復元する', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(
+      storageKey,
+      JSON.stringify({
+        version: 1,
+        studyLogs: [
+          {
+            id: 'legacy',
+            topic: 'React',
+            durationMinutes: 45,
+          },
+        ],
+      }),
+    )
+    const repository = new LocalStorageStudyLogRepository(
+      storage,
+      storageKey,
+      [],
+    )
+
+    await expect(repository.findAll()).resolves.toEqual([
+      {
+        id: 'legacy',
+        topic: 'React',
+        durationMinutes: 45,
+        studiedOn: null,
+      },
+    ])
+  })
+
   it('未対応のバージョンなら読み込みに失敗する', async () => {
     const storage = new MemoryStorage()
-    storage.setItem(storageKey, JSON.stringify({ version: 2, studyLogs: [] }))
+    storage.setItem(storageKey, JSON.stringify({ version: 3, studyLogs: [] }))
     const repository = new LocalStorageStudyLogRepository(
       storage,
       storageKey,

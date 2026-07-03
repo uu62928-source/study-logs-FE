@@ -10,11 +10,13 @@ const initialStudyLogs = [
     id: 'architecture-boundaries',
     topic: 'アーキテクチャの境界',
     durationMinutes: 45,
+    studiedOn: '2026-07-01',
   }),
   createStudyLog({
     id: 'clean-architecture',
     topic: 'Clean Architecture',
     durationMinutes: 30,
+    studiedOn: '2026-07-02',
   }),
 ]
 

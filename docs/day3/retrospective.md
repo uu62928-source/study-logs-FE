@@ -53,6 +53,12 @@
 - URLを唯一の情報源にする`useStudyLogSearchParams`
 - `useSyncExternalStore`によるURL変更と`popstate`の購読
 - URLの既定値省略と不正な並び順のフォールバック
+- `StudyDate` branded typeと実在日付の検証
+- フォームの学習日入力、必須エラー、日付エラー
+- ローカル時間を使った新規作成時の今日の日付
+- 学習日のDomain、DTO、ViewModel間の変換
+- localStorage version 1からversion 2への移行
+- 旧データの「日付未設定」表示
 
 ## うまくいったこと
 
@@ -89,6 +95,10 @@
 - URLを起点として画面stateを計算し、同じ検索条件をローカルstateへ二重管理せずに済んだ
 - URLはReact外部の状態なので、変更通知を購読して再レンダーにつなげる必要があると理解できた
 - URL同期後も全78件のテスト、lint、buildが成功した
+- 入力途中の文字列と、検証済みのDomain日付を型で分けられた
+- 日付形式だけでなく、うるう年を含む実在日付を検証できた
+- 旧データへ架空の日付を補わず、`null`として正直に移行できた
+- 学習日実装後も全86件のテスト、lint、buildが成功した
 
 ## 次回の課題
 

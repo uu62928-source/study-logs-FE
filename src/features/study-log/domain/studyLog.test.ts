@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   calculateTotalStudyMinutes,
+  createStudyDate,
   createStudyLog,
   type StudyLog,
 } from './studyLog'
@@ -33,6 +34,7 @@ describe('createStudyLog', () => {
       id: 'log-1',
       topic: 'TypeScript',
       durationMinutes: 30,
+      studiedOn: null,
     })
   })
 
@@ -81,4 +83,19 @@ describe('createStudyLog', () => {
       }),
     ).toThrow('学習内容は必須です。')
   })
+})
+
+describe('createStudyDate', () => {
+  it('実在する日付を受け付ける', () => {
+    expect(createStudyDate('2024-02-29')).toBe('2024-02-29')
+  })
+
+  it.each(['2026-02-29', '2026-02-31', '2026-13-01', '2026/07/03'])(
+    '不正な日付（%s）を受け付けない',
+    (value) => {
+      expect(() => createStudyDate(value)).toThrow(
+        '学習日は実在するYYYY-MM-DD形式で指定してください。',
+      )
+    },
+  )
 })

@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 
 import { toStudyLog } from './studyLogForm'
 
+const studiedOn = '2026-07-03'
+
 describe('toStudyLog', () => {
   it('Form型の文字列を検証済みのDomain型へ変換する', () => {
     expect(
       toStudyLog('type-modeling', {
         topic: ' TypeScriptの型 ',
         durationMinutes: '90',
+        studiedOn,
       }),
     ).toEqual({
       ok: true,
@@ -15,6 +18,7 @@ describe('toStudyLog', () => {
         id: 'type-modeling',
         topic: 'TypeScriptの型',
         durationMinutes: 90,
+        studiedOn,
       },
     })
   })
@@ -24,6 +28,7 @@ describe('toStudyLog', () => {
       toStudyLog('type-modeling', {
         topic: ' ',
         durationMinutes: '1.5',
+        studiedOn,
       }),
     ).toEqual({
       ok: false,
@@ -40,6 +45,7 @@ describe('toStudyLog', () => {
       const result = toStudyLog('type-modeling', {
         topic: 'TypeScript',
         durationMinutes,
+        studiedOn,
       })
 
       expect(result).toEqual({
@@ -48,6 +54,7 @@ describe('toStudyLog', () => {
           id: 'type-modeling',
           topic: 'TypeScript',
           durationMinutes: Number(durationMinutes),
+          studiedOn,
         },
       })
     },
@@ -60,6 +67,7 @@ describe('toStudyLog', () => {
         toStudyLog('type-modeling', {
           topic: 'TypeScript',
           durationMinutes,
+          studiedOn,
         }),
       ).toEqual({
         ok: false,
@@ -75,11 +83,42 @@ describe('toStudyLog', () => {
       toStudyLog('type-modeling', {
         topic: 'TypeScript',
         durationMinutes: ' ',
+        studiedOn,
       }),
     ).toEqual({
       ok: false,
       errors: {
         durationMinutes: '学習時間を入力してください。',
+      },
+    })
+  })
+
+  it('空の学習日を必須エラーにする', () => {
+    expect(
+      toStudyLog('type-modeling', {
+        topic: 'TypeScript',
+        durationMinutes: '30',
+        studiedOn: '',
+      }),
+    ).toEqual({
+      ok: false,
+      errors: {
+        studiedOn: '学習日を入力してください。',
+      },
+    })
+  })
+
+  it('実在しない学習日をエラーにする', () => {
+    expect(
+      toStudyLog('type-modeling', {
+        topic: 'TypeScript',
+        durationMinutes: '30',
+        studiedOn: '2026-02-31',
+      }),
+    ).toEqual({
+      ok: false,
+      errors: {
+        studiedOn: '実在する日付を入力してください。',
       },
     })
   })

@@ -78,6 +78,24 @@ function StudyLogEditorForm({
           </p>
         )}
 
+      <label>
+        <span>学習日</span>
+        <input
+          type="date"
+          value={editor.values.studiedOn}
+          disabled={editor.status === 'saving'}
+          aria-invalid={
+            editor.status === 'editing' && editor.errors.studiedOn !== undefined
+          }
+          onChange={(event) => onChange('studiedOn', event.target.value)}
+        />
+      </label>
+      {editor.status === 'editing' && editor.errors.studiedOn !== undefined && (
+        <p className="field-error" role="alert">
+          {editor.errors.studiedOn}
+        </p>
+      )}
+
       {editor.status === 'save-error' && (
         <p className="field-error" role="alert">
           {editor.message}
@@ -149,6 +167,7 @@ export function StudyLogView(props: StudyLogViewProps) {
     beginEditing(selectedStudyLog.id, {
       topic: selectedStudyLog.topic,
       durationMinutes: selectedStudyLog.durationInputValue,
+      studiedOn: selectedStudyLog.studiedOnInputValue,
     })
   }
 
@@ -278,6 +297,7 @@ export function StudyLogView(props: StudyLogViewProps) {
                 <>
                   <h3>{selectedStudyLog.topic}</h3>
                   <p>学習時間：{selectedStudyLog.durationLabel}</p>
+                  <p>学習日：{selectedStudyLog.studiedOnLabel}</p>
 
                   {interaction.editor.status === 'closed' ? (
                     <>

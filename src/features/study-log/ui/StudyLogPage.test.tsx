@@ -216,6 +216,7 @@ describe('StudyLogPage', () => {
         id: 'type-modeling',
         topic: 'TypeScript',
         durationMinutes: 30,
+        studiedOn: '2026-07-03',
       }),
     ]
     const getStudyLogSummary = () =>
@@ -257,6 +258,7 @@ describe('StudyLogPage', () => {
         id: 'type-modeling',
         topic: 'TypeScript',
         durationMinutes: 30,
+        studiedOn: '2026-07-03',
       }),
     ]
     const getStudyLogSummary = () =>
@@ -311,6 +313,7 @@ describe('StudyLogPage', () => {
       id: 'type-modeling',
       topic: 'TypeScript',
       durationMinutes: 30,
+      studiedOn: '2026-07-03',
     })
     const getStudyLogSummary = () =>
       Promise.resolve({
@@ -347,6 +350,7 @@ describe('StudyLogPage', () => {
       id: 'type-modeling',
       topic: 'TypeScript',
       durationMinutes: 30,
+      studiedOn: '2026-07-03',
     })
     const getStudyLogSummary = () =>
       Promise.resolve({

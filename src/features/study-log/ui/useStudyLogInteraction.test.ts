@@ -6,6 +6,7 @@ import { useStudyLogInteraction } from './useStudyLogInteraction'
 const validValues = {
   topic: 'TypeScript',
   durationMinutes: '30',
+  studiedOn: '2026-07-03',
 }
 
 function renderInteractionHook({
@@ -23,6 +24,7 @@ function renderInteractionHook({
         deleteStudyLog,
         updateStudyLog,
         createId: () => 'new-study-log',
+        getToday: () => '2026-07-03',
       }),
     ),
   }
@@ -47,6 +49,7 @@ describe('useStudyLogInteraction', () => {
         id: 'new-study-log',
         topic: 'React',
         durationMinutes: 45,
+        studiedOn: '2026-07-03',
       }),
     )
     expect(updateStudyLog).not.toHaveBeenCalled()
@@ -68,6 +71,7 @@ describe('useStudyLogInteraction', () => {
         id: 'type-modeling',
         topic: 'TypeScript',
         durationMinutes: 30,
+        studiedOn: '2026-07-03',
       }),
     )
     expect(addStudyLog).not.toHaveBeenCalled()
@@ -83,6 +87,7 @@ describe('useStudyLogInteraction', () => {
       result.current.startEditing('type-modeling', {
         topic: '',
         durationMinutes: '',
+        studiedOn: '2026-07-03',
       })
     })
 
@@ -98,7 +103,11 @@ describe('useStudyLogInteraction', () => {
         mode: 'update',
         studyLogId: 'type-modeling',
       },
-      values: { topic: '', durationMinutes: '' },
+      values: {
+        topic: '',
+        durationMinutes: '',
+        studiedOn: '2026-07-03',
+      },
       errors: {
         topic: '学習内容を入力してください。',
         durationMinutes: '学習時間を入力してください。',

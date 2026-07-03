@@ -6,6 +6,8 @@ export type StudyLogListItemViewModel = Readonly<{
   durationMinutes: number
   durationLabel: string
   durationInputValue: string
+  studiedOnLabel: string
+  studiedOnInputValue: string
 }>
 
 export type StudyLogSummaryViewModel = Readonly<{
@@ -29,6 +31,15 @@ export function toStudyLogSummaryViewModel(
       durationMinutes: studyLog.durationMinutes,
       durationLabel: `${studyLog.durationMinutes}分`,
       durationInputValue: String(studyLog.durationMinutes),
+      studiedOnLabel:
+        studyLog.studiedOn === null
+          ? '日付未設定'
+          : studyLog.studiedOn.replace(
+              /^(\d{4})-(\d{2})-(\d{2})$/,
+              (_, year: string, month: string, day: string) =>
+                `${year}年${Number(month)}月${Number(day)}日`,
+            ),
+      studiedOnInputValue: studyLog.studiedOn ?? '',
     })),
     totalDurationLabel: `${summary.totalMinutes}分`,
   }
