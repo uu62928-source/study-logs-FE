@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   initialStudyLogInteractionState,
   studyLogInteractionReducer,
+  type EditorTarget,
   type StudyLogInteractionState,
 } from './studyLogInteraction'
 
@@ -10,14 +11,38 @@ const formValues = {
   topic: 'TypeScript',
   durationMinutes: '30',
 }
+const updateTarget: EditorTarget = {
+  mode: 'update',
+  studyLogId: 'type-modeling',
+}
 
 describe('studyLogInteractionReducer', () => {
+  it('新規作成を開始すると新しいIDと空の入力値を保持する', () => {
+    expect(
+      studyLogInteractionReducer(initialStudyLogInteractionState, {
+        type: 'creationStarted',
+        newStudyLogId: 'new-study-log',
+      }),
+    ).toEqual({
+      selectedStudyLogId: null,
+      editor: {
+        status: 'editing',
+        target: {
+          mode: 'create',
+          newStudyLogId: 'new-study-log',
+        },
+        values: { topic: '', durationMinutes: '' },
+        errors: {},
+      },
+    })
+  })
+
   it('学習ログを選択すると編集中の内容を閉じる', () => {
     const state: StudyLogInteractionState = {
       selectedStudyLogId: 'old-log',
       editor: {
         status: 'editing',
-        studyLogId: 'old-log',
+        target: { mode: 'update', studyLogId: 'old-log' },
         values: formValues,
         errors: {},
       },
@@ -34,7 +59,7 @@ describe('studyLogInteractionReducer', () => {
     })
   })
 
-  it('編集を開始すると対象と初期値を保持する', () => {
+  it('編集を開始すると更新対象と初期値を保持する', () => {
     expect(
       studyLogInteractionReducer(initialStudyLogInteractionState, {
         type: 'editStarted',
@@ -45,7 +70,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: null,
       editor: {
         status: 'editing',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
         errors: {},
       },
@@ -57,7 +82,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'editing',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
         errors: { topic: '学習内容を入力してください。' },
       },
@@ -73,19 +98,19 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'editing',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: { ...formValues, topic: 'React' },
         errors: {},
       },
     })
   })
 
-  it('保存失敗時に入力値を残す', () => {
+  it('保存失敗時に操作の目的と入力値を残す', () => {
     const savingState: StudyLogInteractionState = {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'saving',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
       },
     }
@@ -99,7 +124,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'save-error',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
         message: '保存できませんでした。',
       },
@@ -111,7 +136,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'save-error',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
         message: '保存できませんでした。',
       },
@@ -123,7 +148,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'saving',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
       },
     })
@@ -134,7 +159,7 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'editing',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
         errors: {},
       },
@@ -153,13 +178,13 @@ describe('studyLogInteractionReducer', () => {
       selectedStudyLogId: 'type-modeling',
       editor: {
         status: 'saving',
-        studyLogId: 'type-modeling',
+        target: updateTarget,
         values: formValues,
       },
     }
 
-    expect(
-      studyLogInteractionReducer(state, { type: 'editCancelled' }),
-    ).toBe(state)
+    expect(studyLogInteractionReducer(state, { type: 'editCancelled' })).toBe(
+      state,
+    )
   })
 })

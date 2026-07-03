@@ -15,7 +15,7 @@ const errorWithoutMessage: StudyLogViewState = { status: 'error' }
 
 type StudyLogViewProps = Parameters<typeof StudyLogView>[0]
 
-// @ts-expect-error success状態では保存処理が必要
+// @ts-expect-error 表示には追加処理と更新処理が必要
 const successViewWithoutSave: StudyLogViewProps = {
   status: 'success',
   summary: {
@@ -26,8 +26,8 @@ const successViewWithoutSave: StudyLogViewProps = {
 
 const loadingViewWithSave: StudyLogViewProps = {
   status: 'loading',
-  // @ts-expect-error loading状態では保存処理を受け取らない
-  onSaveStudyLog: () => Promise.resolve(),
+  onAddStudyLog: () => Promise.resolve(),
+  onUpdateStudyLog: () => Promise.resolve(),
 }
 
 void successWithoutSummary

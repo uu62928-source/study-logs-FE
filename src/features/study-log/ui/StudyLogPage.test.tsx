@@ -10,6 +10,7 @@ import {
 import { StudyLogPage } from './StudyLogPage'
 
 describe('StudyLogPage', () => {
+  const addStudyLog = () => Promise.resolve()
   const updateStudyLog = () => Promise.resolve()
 
   it('取得した学習ログと合計時間を表示する', async () => {
@@ -28,6 +29,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -46,6 +48,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -65,6 +68,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -95,6 +99,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -105,6 +110,49 @@ describe('StudyLogPage', () => {
 
     expect(screen.queryByText('React')).not.toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
+  })
+
+  it('空状態から新しい学習ログを追加する', async () => {
+    const user = userEvent.setup()
+    let studyLogs: StudyLog[] = []
+    const getStudyLogSummary = () =>
+      Promise.resolve({
+        studyLogs,
+        totalMinutes: calculateTotalStudyMinutes(studyLogs),
+      })
+    const addNewStudyLog = vi.fn((studyLog: StudyLog) => {
+      studyLogs = [...studyLogs, studyLog]
+      return Promise.resolve()
+    })
+
+    render(
+      <StudyLogPage
+        addStudyLog={addNewStudyLog}
+        getStudyLogSummary={getStudyLogSummary}
+        updateStudyLog={updateStudyLog}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: '新しい学習ログを追加',
+      }),
+    )
+    await user.type(screen.getByLabelText('学習内容'), 'React')
+    await user.type(screen.getByLabelText('学習時間（分）'), '45')
+    await user.click(screen.getByRole('button', { name: '保存する' }))
+
+    expect(addNewStudyLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        topic: 'React',
+        durationMinutes: 45,
+      }),
+    )
+    const [addedStudyLog] = addNewStudyLog.mock.calls[0] ?? []
+    expect(addedStudyLog?.id).toBeTruthy()
+    expect(
+      await screen.findByRole('button', { name: 'React 45分' }),
+    ).toBeInTheDocument()
   })
 
   it('詳細から学習ログを編集して再読み込みする', async () => {
@@ -130,6 +178,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -176,6 +225,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -210,6 +260,7 @@ describe('StudyLogPage', () => {
 
     render(
       <StudyLogPage
+        addStudyLog={addStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,

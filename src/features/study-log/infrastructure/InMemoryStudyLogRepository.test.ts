@@ -4,6 +4,32 @@ import { createStudyLog } from '../domain/studyLog'
 import { InMemoryStudyLogRepository } from './InMemoryStudyLogRepository'
 
 describe('InMemoryStudyLogRepository', () => {
+  it('新しいIDの学習ログを追加する', async () => {
+    const studyLog = createStudyLog({
+      id: 'new-study-log',
+      topic: 'React',
+      durationMinutes: 45,
+    })
+    const repository = new InMemoryStudyLogRepository([])
+
+    await repository.add(studyLog)
+
+    await expect(repository.findAll()).resolves.toEqual([studyLog])
+  })
+
+  it('同じIDの学習ログは追加できない', async () => {
+    const studyLog = createStudyLog({
+      id: 'type-modeling',
+      topic: 'TypeScript',
+      durationMinutes: 30,
+    })
+    const repository = new InMemoryStudyLogRepository([studyLog])
+
+    await expect(repository.add(studyLog)).rejects.toThrow(
+      '同じIDの学習ログが存在します。',
+    )
+  })
+
   it('同じIDの学習ログを更新する', async () => {
     const original = createStudyLog({
       id: 'type-modeling',

@@ -2,31 +2,115 @@ import { useState, type FormEvent } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
 import type { StudyLogFormValues } from './studyLogForm'
+import type { EditorState } from './studyLogInteraction'
 import type {
   StudyLogListItemViewModel,
   StudyLogViewState,
 } from './studyLogViewModel'
 import { useStudyLogInteraction } from './useStudyLogInteraction'
 
-type StudyLogViewProps =
-  | Exclude<StudyLogViewState, { status: 'success' }>
-  | (Extract<StudyLogViewState, { status: 'success' }> &
-      Readonly<{
-        onSaveStudyLog: (studyLog: StudyLog) => Promise<void>
-      }>)
+type StudyLogViewProps = StudyLogViewState &
+  Readonly<{
+    onAddStudyLog: (studyLog: StudyLog) => Promise<void>
+    onUpdateStudyLog: (studyLog: StudyLog) => Promise<void>
+  }>
+
+type StudyLogEditorFormProps = Readonly<{
+  editor: Exclude<EditorState, { status: 'closed' }>
+  onChange: (field: keyof StudyLogFormValues, value: string) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onCancel: () => void
+}>
+
+function StudyLogEditorForm({
+  editor,
+  onChange,
+  onSubmit,
+  onCancel,
+}: StudyLogEditorFormProps) {
+  return (
+    <form
+      className="study-log-form"
+      onSubmit={(event) => {
+        onSubmit(event)
+      }}
+    >
+      <label>
+        <span>学習内容</span>
+        <input
+          value={editor.values.topic}
+          disabled={editor.status === 'saving'}
+          aria-invalid={
+            editor.status === 'editing' && editor.errors.topic !== undefined
+          }
+          onChange={(event) => onChange('topic', event.target.value)}
+        />
+      </label>
+      {editor.status === 'editing' && editor.errors.topic !== undefined && (
+        <p className="field-error" role="alert">
+          {editor.errors.topic}
+        </p>
+      )}
+
+      <label>
+        <span>学習時間（分）</span>
+        <input
+          type="number"
+          min="1"
+          max="1440"
+          step="1"
+          value={editor.values.durationMinutes}
+          disabled={editor.status === 'saving'}
+          aria-invalid={
+            editor.status === 'editing' &&
+            editor.errors.durationMinutes !== undefined
+          }
+          onChange={(event) => onChange('durationMinutes', event.target.value)}
+        />
+      </label>
+      {editor.status === 'editing' &&
+        editor.errors.durationMinutes !== undefined && (
+          <p className="field-error" role="alert">
+            {editor.errors.durationMinutes}
+          </p>
+        )}
+
+      {editor.status === 'save-error' && (
+        <p className="field-error" role="alert">
+          {editor.message}
+        </p>
+      )}
+
+      <div className="form-actions">
+        <button type="submit" disabled={editor.status === 'saving'}>
+          {editor.status === 'saving' ? '保存中...' : '保存する'}
+        </button>
+        <button
+          type="button"
+          disabled={editor.status === 'saving'}
+          onClick={onCancel}
+        >
+          キャンセル
+        </button>
+      </div>
+    </form>
+  )
+}
 
 export function StudyLogView(props: StudyLogViewProps) {
   const [filterQuery, setFilterQuery] = useState('')
   const {
     interaction,
     selectStudyLog,
+    startCreating,
     startEditing: beginEditing,
     changeFormValue,
     submitEdit: saveEdit,
     cancelEditing,
-  } = useStudyLogInteraction(
-    props.status === 'success' ? props.onSaveStudyLog : undefined,
-  )
+  } = useStudyLogInteraction({
+    addStudyLog: props.onAddStudyLog,
+    updateStudyLog: props.onUpdateStudyLog,
+  })
 
   const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
   let filteredStudyLogs: readonly StudyLogListItemViewModel[] = []
@@ -87,6 +171,31 @@ export function StudyLogView(props: StudyLogViewProps) {
           <p>まだ学習ログがありません。最初の記録を追加しましょう。</p>
         )}
 
+        {(props.status === 'empty' || props.status === 'success') &&
+          interaction.editor.status === 'closed' && (
+            <button type="button" onClick={startCreating}>
+              新しい学習ログを追加
+            </button>
+          )}
+
+        {interaction.editor.status !== 'closed' &&
+          interaction.editor.target.mode === 'create' && (
+            <section
+              className="study-log-detail"
+              aria-labelledby="create-title"
+            >
+              <h2 id="create-title">新しい学習ログ</h2>
+              <StudyLogEditorForm
+                editor={interaction.editor}
+                onChange={updateFormValue}
+                onSubmit={(event) => {
+                  void submitEdit(event)
+                }}
+                onCancel={cancelEditing}
+              />
+            </section>
+          )}
+
         {props.status === 'success' && (
           <>
             <label className="filter-field">
@@ -142,89 +251,16 @@ export function StudyLogView(props: StudyLogViewProps) {
                     <button type="button" onClick={startEditing}>
                       編集する
                     </button>
-                  ) : (
-                    <form
-                      className="study-log-form"
+                  ) : interaction.editor.target.mode === 'update' ? (
+                    <StudyLogEditorForm
+                      editor={interaction.editor}
+                      onChange={updateFormValue}
                       onSubmit={(event) => {
                         void submitEdit(event)
                       }}
-                    >
-                      <label>
-                        <span>学習内容</span>
-                        <input
-                          value={interaction.editor.values.topic}
-                          disabled={interaction.editor.status === 'saving'}
-                          aria-invalid={
-                            interaction.editor.status === 'editing' &&
-                            interaction.editor.errors.topic !== undefined
-                          }
-                          onChange={(event) =>
-                            updateFormValue('topic', event.target.value)
-                          }
-                        />
-                      </label>
-                      {interaction.editor.status === 'editing' &&
-                        interaction.editor.errors.topic !== undefined && (
-                          <p className="field-error" role="alert">
-                            {interaction.editor.errors.topic}
-                          </p>
-                        )}
-
-                      <label>
-                        <span>学習時間（分）</span>
-                        <input
-                          type="number"
-                          min="1"
-                          max="1440"
-                          step="1"
-                          value={interaction.editor.values.durationMinutes}
-                          disabled={interaction.editor.status === 'saving'}
-                          aria-invalid={
-                            interaction.editor.status === 'editing' &&
-                            interaction.editor.errors.durationMinutes !==
-                              undefined
-                          }
-                          onChange={(event) =>
-                            updateFormValue(
-                              'durationMinutes',
-                              event.target.value,
-                            )
-                          }
-                        />
-                      </label>
-                      {interaction.editor.status === 'editing' &&
-                        interaction.editor.errors.durationMinutes !==
-                          undefined && (
-                          <p className="field-error" role="alert">
-                            {interaction.editor.errors.durationMinutes}
-                          </p>
-                        )}
-
-                      {interaction.editor.status === 'save-error' && (
-                        <p className="field-error" role="alert">
-                          {interaction.editor.message}
-                        </p>
-                      )}
-
-                      <div className="form-actions">
-                        <button
-                          type="submit"
-                          disabled={interaction.editor.status === 'saving'}
-                        >
-                          {interaction.editor.status === 'saving'
-                            ? '保存中...'
-                            : '保存する'}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={interaction.editor.status === 'saving'}
-                          onClick={cancelEditing}
-                        >
-                          キャンセル
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                      onCancel={cancelEditing}
+                    />
+                  ) : null}
                 </>
               )}
             </section>

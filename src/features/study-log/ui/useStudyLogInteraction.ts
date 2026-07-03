@@ -1,10 +1,7 @@
 import { useReducer } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
-import {
-  toStudyLog,
-  type StudyLogFormValues,
-} from './studyLogForm'
+import { toStudyLog, type StudyLogFormValues } from './studyLogForm'
 import {
   initialStudyLogInteractionState,
   studyLogInteractionReducer,
@@ -12,25 +9,29 @@ import {
 } from './studyLogInteraction'
 
 type SaveStudyLog = (studyLog: StudyLog) => Promise<void>
+type CreateId = () => string
+
+type UseStudyLogInteractionDependencies = Readonly<{
+  addStudyLog: SaveStudyLog
+  updateStudyLog: SaveStudyLog
+  createId?: CreateId
+}>
 
 type UseStudyLogInteractionResult = Readonly<{
   interaction: StudyLogInteractionState
   selectStudyLog: (studyLogId: string) => void
-  startEditing: (
-    studyLogId: string,
-    values: StudyLogFormValues,
-  ) => void
-  changeFormValue: (
-    field: keyof StudyLogFormValues,
-    value: string,
-  ) => void
+  startCreating: () => void
+  startEditing: (studyLogId: string, values: StudyLogFormValues) => void
+  changeFormValue: (field: keyof StudyLogFormValues, value: string) => void
   submitEdit: () => Promise<void>
   cancelEditing: () => void
 }>
 
-export function useStudyLogInteraction(
-  saveStudyLog: SaveStudyLog | undefined,
-): UseStudyLogInteractionResult {
+export function useStudyLogInteraction({
+  addStudyLog,
+  updateStudyLog,
+  createId = () => crypto.randomUUID(),
+}: UseStudyLogInteractionDependencies): UseStudyLogInteractionResult {
   const [interaction, dispatch] = useReducer(
     studyLogInteractionReducer,
     initialStudyLogInteractionState,
@@ -40,33 +41,34 @@ export function useStudyLogInteraction(
     dispatch({ type: 'studyLogSelected', studyLogId })
   }
 
-  function startEditing(
-    studyLogId: string,
-    values: StudyLogFormValues,
-  ) {
+  function startCreating() {
+    dispatch({
+      type: 'creationStarted',
+      newStudyLogId: createId(),
+    })
+  }
+
+  function startEditing(studyLogId: string, values: StudyLogFormValues) {
     dispatch({ type: 'editStarted', studyLogId, values })
   }
 
-  function changeFormValue(
-    field: keyof StudyLogFormValues,
-    value: string,
-  ) {
+  function changeFormValue(field: keyof StudyLogFormValues, value: string) {
     dispatch({ type: 'formValueChanged', field, value })
   }
 
   async function submitEdit(): Promise<void> {
     if (
-      saveStudyLog === undefined ||
       interaction.editor.status === 'closed' ||
       interaction.editor.status === 'saving'
     ) {
       return
     }
 
-    const result = toStudyLog(
-      interaction.editor.studyLogId,
-      interaction.editor.values,
-    )
+    const studyLogId =
+      interaction.editor.target.mode === 'create'
+        ? interaction.editor.target.newStudyLogId
+        : interaction.editor.target.studyLogId
+    const result = toStudyLog(studyLogId, interaction.editor.values)
 
     if (!result.ok) {
       dispatch({
@@ -79,7 +81,11 @@ export function useStudyLogInteraction(
     dispatch({ type: 'saveStarted' })
 
     try {
-      await saveStudyLog(result.studyLog)
+      if (interaction.editor.target.mode === 'create') {
+        await addStudyLog(result.studyLog)
+      } else {
+        await updateStudyLog(result.studyLog)
+      }
       dispatch({ type: 'saveSucceeded' })
     } catch {
       dispatch({
@@ -96,6 +102,7 @@ export function useStudyLogInteraction(
   return {
     interaction,
     selectStudyLog,
+    startCreating,
     startEditing,
     changeFormValue,
     submitEdit,

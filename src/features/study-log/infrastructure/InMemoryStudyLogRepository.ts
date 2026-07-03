@@ -12,6 +12,18 @@ export class InMemoryStudyLogRepository implements StudyLogRepository {
     return Promise.resolve([...this.#studyLogs])
   }
 
+  add(studyLog: StudyLog): Promise<void> {
+    const alreadyExists = this.#studyLogs.some(({ id }) => id === studyLog.id)
+
+    if (alreadyExists) {
+      return Promise.reject(new Error('同じIDの学習ログが存在します。'))
+    }
+
+    this.#studyLogs.push(studyLog)
+
+    return Promise.resolve()
+  }
+
   save(studyLog: StudyLog): Promise<void> {
     const index = this.#studyLogs.findIndex(({ id }) => id === studyLog.id)
 

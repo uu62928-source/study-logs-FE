@@ -1,27 +1,28 @@
-import type {
-  StudyLogFormErrors,
-  StudyLogFormValues,
-} from './studyLogForm'
+import type { StudyLogFormErrors, StudyLogFormValues } from './studyLogForm'
 
 export type EditorState =
   | Readonly<{ status: 'closed' }>
   | Readonly<{
       status: 'editing'
-      studyLogId: string
+      target: EditorTarget
       values: StudyLogFormValues
       errors: StudyLogFormErrors
     }>
   | Readonly<{
       status: 'saving'
-      studyLogId: string
+      target: EditorTarget
       values: StudyLogFormValues
     }>
   | Readonly<{
       status: 'save-error'
-      studyLogId: string
+      target: EditorTarget
       values: StudyLogFormValues
       message: string
     }>
+
+export type EditorTarget =
+  | Readonly<{ mode: 'create'; newStudyLogId: string }>
+  | Readonly<{ mode: 'update'; studyLogId: string }>
 
 export type StudyLogInteractionState = Readonly<{
   selectedStudyLogId: string | null
@@ -30,6 +31,7 @@ export type StudyLogInteractionState = Readonly<{
 
 export type StudyLogInteractionEvent =
   | Readonly<{ type: 'studyLogSelected'; studyLogId: string }>
+  | Readonly<{ type: 'creationStarted'; newStudyLogId: string }>
   | Readonly<{
       type: 'editStarted'
       studyLogId: string
@@ -66,12 +68,33 @@ export function studyLogInteractionReducer(
         editor: { status: 'closed' },
       }
 
+    case 'creationStarted':
+      return {
+        ...state,
+        selectedStudyLogId: null,
+        editor: {
+          status: 'editing',
+          target: {
+            mode: 'create',
+            newStudyLogId: event.newStudyLogId,
+          },
+          values: {
+            topic: '',
+            durationMinutes: '',
+          },
+          errors: {},
+        },
+      }
+
     case 'editStarted':
       return {
         ...state,
         editor: {
           status: 'editing',
-          studyLogId: event.studyLogId,
+          target: {
+            mode: 'update',
+            studyLogId: event.studyLogId,
+          },
           values: event.values,
           errors: {},
         },
@@ -89,7 +112,7 @@ export function studyLogInteractionReducer(
         ...state,
         editor: {
           status: 'editing',
-          studyLogId: state.editor.studyLogId,
+          target: state.editor.target,
           values: {
             ...state.editor.values,
             [event.field]: event.value,
@@ -110,7 +133,7 @@ export function studyLogInteractionReducer(
         ...state,
         editor: {
           status: 'editing',
-          studyLogId: state.editor.studyLogId,
+          target: state.editor.target,
           values: state.editor.values,
           errors: event.errors,
         },
@@ -128,7 +151,7 @@ export function studyLogInteractionReducer(
         ...state,
         editor: {
           status: 'saving',
-          studyLogId: state.editor.studyLogId,
+          target: state.editor.target,
           values: state.editor.values,
         },
       }
@@ -152,7 +175,7 @@ export function studyLogInteractionReducer(
         ...state,
         editor: {
           status: 'save-error',
-          studyLogId: state.editor.studyLogId,
+          target: state.editor.target,
           values: state.editor.values,
           message: event.message,
         },

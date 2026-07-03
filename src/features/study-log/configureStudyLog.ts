@@ -1,3 +1,4 @@
+import { createAddStudyLog } from './application/use-cases/addStudyLog'
 import { createGetStudyLogSummary } from './application/use-cases/getStudyLogSummary'
 import { createUpdateStudyLog } from './application/use-cases/updateStudyLog'
 import { createStudyLog } from './domain/studyLog'
@@ -20,6 +21,7 @@ export function configureStudyLog() {
   const repository = new InMemoryStudyLogRepository(initialStudyLogs)
 
   return {
+    addStudyLog: createAddStudyLog(repository),
     getStudyLogSummary: createGetStudyLogSummary(repository),
     updateStudyLog: createUpdateStudyLog(repository),
   }

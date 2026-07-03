@@ -1,10 +1,11 @@
 import { configureStudyLog, StudyLogPage } from '@/features/study-log'
 
-const { getStudyLogSummary, updateStudyLog } = configureStudyLog()
+const { addStudyLog, getStudyLogSummary, updateStudyLog } = configureStudyLog()
 
 export function App() {
   return (
     <StudyLogPage
+      addStudyLog={addStudyLog}
       getStudyLogSummary={getStudyLogSummary}
       updateStudyLog={updateStudyLog}
     />
