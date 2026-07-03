@@ -75,12 +75,71 @@ const selectedStudyLog = props.summary.studyLogs.find(
 
 これらは外部のRepositoryへアクセスする処理であり、同じ入力から常に同じ結果を返す単純な計算とは異なる。
 
+### reducerは状態遷移だけを扱う
+
+reducerは、次の関係だけを扱う純粋関数にする。
+
+```text
+現在のstate + event → 次のstate
+```
+
+Repositoryへの保存、API通信、localStorage操作などの副作用はreducerで扱わない。副作用はreducerの外で実行し、その結果を成功または失敗のeventとしてreducerへ渡す。
+
+```ts
+dispatch({ type: 'saveStarted' })
+
+try {
+  await updateStudyLog(studyLog)
+  dispatch({ type: 'saveSucceeded' })
+} catch {
+  dispatch({
+    type: 'saveFailed',
+    message: '学習ログを保存できませんでした。',
+  })
+}
+```
+
+`saveSucceeded`では、現在の仕様に合わせて`editor`を`closed`へ遷移させる。`saveFailed`では再編集や再送信ができるように、`studyLogId`と入力中の`values`を残したまま`save-error`へ遷移させる。
+
+### `editing`と`save-error`を分ける理由
+
+`editing`と`save-error`では、エラーの原因が異なる。
+
+| 状態 | 意味 | エラーの種類 |
+| --- | --- | --- |
+| `editing` | 入力・修正中 | 未入力や不正な学習時間などの入力エラー |
+| `saving` | 保存処理中 | なし |
+| `save-error` | 入力値は正しいが保存に失敗した | Repositoryや通信などの保存エラー |
+
+```text
+editing
+  ↓ バリデーション成功
+saving
+  ├─ 保存成功 → closed
+  └─ 保存失敗 → save-error
+```
+
+`save-error`では、再編集や再保存ができるように`studyLogId`と入力中の`values`を残し、保存失敗の理由を示す`message`を持つ。
+
+```ts
+type SaveErrorEditorState = Readonly<{
+  status: 'save-error'
+  studyLogId: string
+  values: StudyLogFormValues
+  message: string
+}>
+```
+
+`editing`に`saveError?: string`を追加して保存失敗も表すことはできる。しかし、通常の編集中、入力エラーがある編集中、保存失敗後の編集中の違いが曖昧になる。
+
+`save-error`を独立した状態にすると、`status`だけで保存失敗を判定でき、不正または曖昧な状態を減らせる。保存失敗後に入力値を変更した場合は`editing`へ戻し、「保存失敗後」から「再び編集中」へ変化したことを明示する。
+
 ## 試したこと
 
 現在の`StudyLogView`を読み、stateとして保存されている値と、元情報から計算されている値を分類した。
 
 特に、`selectedStudyLogId`と`props.summary.studyLogs`から`selectedStudyLog`を計算できることを確認した。
 
+編集開始、入力変更、バリデーション失敗、保存開始、保存成功、保存失敗をeventとして表し、それぞれの状態遷移を整理した。
+
 ## 疑問・確認したいこと
-
-
