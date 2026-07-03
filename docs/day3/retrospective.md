@@ -21,7 +21,11 @@
 
 ## 実装したもの
 
-まだコードの変更は行っていない。STEP1で既存コードにあるstate、derived state、イベント、副作用を洗い出し、STEP2で編集機能の状態遷移を設計した。
+- `studyLogInteractionReducer`と初期状態、eventの型
+- `StudyLogView`の`selectedStudyLogId`と`editor`を`useReducer`へ統合
+- ログ選択、編集開始、入力変更、バリデーション失敗、保存開始、保存成功、保存失敗、編集キャンセルの状態遷移
+- reducerの状態遷移テスト7件
+- 保存失敗後に入力を変えず再保存できる遷移
 
 ## うまくいったこと
 
@@ -31,6 +35,9 @@
 - 保存処理はreducerの外、保存結果による状態遷移はreducerの中、と責務を分けられた
 - 保存成功時は`closed`、保存失敗時は入力内容を残した`save-error`が適切だと判断できた
 - 入力エラーと保存エラーでは原因と次に可能な操作が異なるため、状態を分ける意味を理解できた
+- `interaction`とreducer内の`state`が、Reactによってつながる同じ状態だと理解できた
+- reducerをUIから分離したことで、Reactコンポーネントを介さず状態遷移をテストできた
+- `npm run test`、`npm run lint`、`npm run build`がすべて成功した
 
 ## 次回の課題
 

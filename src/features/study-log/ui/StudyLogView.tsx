@@ -1,11 +1,14 @@
-import { useState, type FormEvent } from 'react'
+import { useReducer, useState, type FormEvent } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
 import {
   toStudyLog,
-  type StudyLogFormErrors,
   type StudyLogFormValues,
 } from './studyLogForm'
+import {
+  initialStudyLogInteractionState,
+  studyLogInteractionReducer,
+} from './studyLogInteraction'
 import type {
   StudyLogListItemViewModel,
   StudyLogViewState,
@@ -18,32 +21,12 @@ type StudyLogViewProps =
         onSaveStudyLog: (studyLog: StudyLog) => Promise<void>
       }>)
 
-type EditorState =
-  | Readonly<{ status: 'closed' }>
-  | Readonly<{
-      status: 'editing'
-      studyLogId: string
-      values: StudyLogFormValues
-      errors: StudyLogFormErrors
-    }>
-  | Readonly<{
-      status: 'saving'
-      studyLogId: string
-      values: StudyLogFormValues
-    }>
-  | Readonly<{
-      status: 'save-error'
-      studyLogId: string
-      values: StudyLogFormValues
-      message: string
-    }>
-
 export function StudyLogView(props: StudyLogViewProps) {
   const [filterQuery, setFilterQuery] = useState('')
-  const [selectedStudyLogId, setSelectedStudyLogId] = useState<string | null>(
-    null,
+  const [interaction, dispatch] = useReducer(
+    studyLogInteractionReducer,
+    initialStudyLogInteractionState,
   )
-  const [editor, setEditor] = useState<EditorState>({ status: 'closed' })
 
   const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
   let filteredStudyLogs: readonly StudyLogListItemViewModel[] = []
@@ -60,13 +43,12 @@ export function StudyLogView(props: StudyLogViewProps) {
   const selectedStudyLog =
     props.status === 'success'
       ? props.summary.studyLogs.find(
-          (studyLog) => studyLog.id === selectedStudyLogId,
+          (studyLog) => studyLog.id === interaction.selectedStudyLogId,
         )
       : undefined
 
   function selectStudyLog(studyLogId: string) {
-    setSelectedStudyLogId(studyLogId)
-    setEditor({ status: 'closed' })
+    dispatch({ type: 'studyLogSelected', studyLogId })
   }
 
   function startEditing() {
@@ -74,35 +56,26 @@ export function StudyLogView(props: StudyLogViewProps) {
       return
     }
 
-    setEditor({
-      status: 'editing',
+    dispatch({
+      type: 'editStarted',
       studyLogId: selectedStudyLog.id,
       values: {
         topic: selectedStudyLog.topic,
         durationMinutes: selectedStudyLog.durationInputValue,
       },
-      errors: {},
     })
   }
 
   function updateFormValue(field: keyof StudyLogFormValues, value: string) {
     if (
       props.status !== 'success' ||
-      editor.status === 'closed' ||
-      editor.status === 'saving'
+      interaction.editor.status === 'closed' ||
+      interaction.editor.status === 'saving'
     ) {
       return
     }
 
-    setEditor({
-      status: 'editing',
-      studyLogId: editor.studyLogId,
-      values: {
-        ...editor.values,
-        [field]: value,
-      },
-      errors: {},
-    })
+    dispatch({ type: 'formValueChanged', field, value })
   }
 
   async function submitEdit(event: FormEvent<HTMLFormElement>) {
@@ -110,39 +83,32 @@ export function StudyLogView(props: StudyLogViewProps) {
 
     if (
       props.status !== 'success' ||
-      editor.status === 'closed' ||
-      editor.status === 'saving'
+      interaction.editor.status === 'closed' ||
+      interaction.editor.status === 'saving'
     ) {
       return
     }
 
     const { onSaveStudyLog } = props
+    const editor = interaction.editor
     const result = toStudyLog(editor.studyLogId, editor.values)
 
     if (!result.ok) {
-      setEditor({
-        status: 'editing',
-        studyLogId: editor.studyLogId,
-        values: editor.values,
+      dispatch({
+        type: 'validationFailed',
         errors: result.errors,
       })
       return
     }
 
-    setEditor({
-      status: 'saving',
-      studyLogId: editor.studyLogId,
-      values: editor.values,
-    })
+    dispatch({ type: 'saveStarted' })
 
     try {
       await onSaveStudyLog(result.studyLog)
-      setEditor({ status: 'closed' })
+      dispatch({ type: 'saveSucceeded' })
     } catch {
-      setEditor({
-        status: 'save-error',
-        studyLogId: editor.studyLogId,
-        values: editor.values,
+      dispatch({
+        type: 'saveFailed',
         message: '学習ログを保存できませんでした。',
       })
     }
@@ -189,7 +155,9 @@ export function StudyLogView(props: StudyLogViewProps) {
                     <button
                       type="button"
                       className="study-log-item"
-                      aria-pressed={studyLog.id === selectedStudyLogId}
+                      aria-pressed={
+                        studyLog.id === interaction.selectedStudyLogId
+                      }
                       onClick={() => selectStudyLog(studyLog.id)}
                     >
                       <span>{studyLog.topic}</span>
@@ -217,7 +185,7 @@ export function StudyLogView(props: StudyLogViewProps) {
                   <h3>{selectedStudyLog.topic}</h3>
                   <p>学習時間：{selectedStudyLog.durationLabel}</p>
 
-                  {editor.status === 'closed' ? (
+                  {interaction.editor.status === 'closed' ? (
                     <button type="button" onClick={startEditing}>
                       編集する
                     </button>
@@ -231,21 +199,21 @@ export function StudyLogView(props: StudyLogViewProps) {
                       <label>
                         <span>学習内容</span>
                         <input
-                          value={editor.values.topic}
-                          disabled={editor.status === 'saving'}
+                          value={interaction.editor.values.topic}
+                          disabled={interaction.editor.status === 'saving'}
                           aria-invalid={
-                            editor.status === 'editing' &&
-                            editor.errors.topic !== undefined
+                            interaction.editor.status === 'editing' &&
+                            interaction.editor.errors.topic !== undefined
                           }
                           onChange={(event) =>
                             updateFormValue('topic', event.target.value)
                           }
                         />
                       </label>
-                      {editor.status === 'editing' &&
-                        editor.errors.topic !== undefined && (
+                      {interaction.editor.status === 'editing' &&
+                        interaction.editor.errors.topic !== undefined && (
                           <p className="field-error" role="alert">
-                            {editor.errors.topic}
+                            {interaction.editor.errors.topic}
                           </p>
                         )}
 
@@ -256,11 +224,12 @@ export function StudyLogView(props: StudyLogViewProps) {
                           min="1"
                           max="1440"
                           step="1"
-                          value={editor.values.durationMinutes}
-                          disabled={editor.status === 'saving'}
+                          value={interaction.editor.values.durationMinutes}
+                          disabled={interaction.editor.status === 'saving'}
                           aria-invalid={
-                            editor.status === 'editing' &&
-                            editor.errors.durationMinutes !== undefined
+                            interaction.editor.status === 'editing' &&
+                            interaction.editor.errors.durationMinutes !==
+                              undefined
                           }
                           onChange={(event) =>
                             updateFormValue(
@@ -270,32 +239,33 @@ export function StudyLogView(props: StudyLogViewProps) {
                           }
                         />
                       </label>
-                      {editor.status === 'editing' &&
-                        editor.errors.durationMinutes !== undefined && (
+                      {interaction.editor.status === 'editing' &&
+                        interaction.editor.errors.durationMinutes !==
+                          undefined && (
                           <p className="field-error" role="alert">
-                            {editor.errors.durationMinutes}
+                            {interaction.editor.errors.durationMinutes}
                           </p>
                         )}
 
-                      {editor.status === 'save-error' && (
+                      {interaction.editor.status === 'save-error' && (
                         <p className="field-error" role="alert">
-                          {editor.message}
+                          {interaction.editor.message}
                         </p>
                       )}
 
                       <div className="form-actions">
                         <button
                           type="submit"
-                          disabled={editor.status === 'saving'}
+                          disabled={interaction.editor.status === 'saving'}
                         >
-                          {editor.status === 'saving'
+                          {interaction.editor.status === 'saving'
                             ? '保存中...'
                             : '保存する'}
                         </button>
                         <button
                           type="button"
-                          disabled={editor.status === 'saving'}
-                          onClick={() => setEditor({ status: 'closed' })}
+                          disabled={interaction.editor.status === 'saving'}
+                          onClick={() => dispatch({ type: 'editCancelled' })}
                         >
                           キャンセル
                         </button>

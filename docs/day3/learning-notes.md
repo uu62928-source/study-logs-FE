@@ -142,4 +142,27 @@ type SaveErrorEditorState = Readonly<{
 
 編集開始、入力変更、バリデーション失敗、保存開始、保存成功、保存失敗をeventとして表し、それぞれの状態遷移を整理した。
 
+設計した状態遷移を`studyLogInteractionReducer`として実装し、`StudyLogView`の`selectedStudyLogId`と`editor`を別々の`useState`で管理する方法から、1つの`useReducer`で管理する方法へ変更した。
+
+```ts
+const [interaction, dispatch] = useReducer(
+  studyLogInteractionReducer,
+  initialStudyLogInteractionState,
+)
+```
+
+コンポーネント内の`interaction`が現在の状態であり、`dispatch`したeventとともにreducerへ渡される。reducerの引数`state`は現在の`interaction`を指し、reducerが返した次のstateが次回レンダー時の`interaction`になる。
+
+```text
+interaction + dispatchしたevent
+              ↓
+studyLogInteractionReducer(state, event)
+              ↓
+次のinteraction
+```
+
+保存失敗後に入力値を変更せず再試行できるよう、`saveStarted`は`editing`と`save-error`の両方から許可した。
+
+reducerの単体テストを追加し、ログ選択、編集開始、入力変更、保存失敗、再保存、キャンセル、保存中の不正なキャンセルを確認した。
+
 ## 疑問・確認したいこと
