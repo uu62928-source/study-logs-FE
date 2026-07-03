@@ -24,9 +24,19 @@ export type EditorTarget =
   | Readonly<{ mode: 'create'; newStudyLogId: string }>
   | Readonly<{ mode: 'update'; studyLogId: string }>
 
+export type DeletionState =
+  | Readonly<{ status: 'idle' }>
+  | Readonly<{ status: 'deleting'; studyLogId: string }>
+  | Readonly<{
+      status: 'delete-error'
+      studyLogId: string
+      message: string
+    }>
+
 export type StudyLogInteractionState = Readonly<{
   selectedStudyLogId: string | null
   editor: EditorState
+  deletion: DeletionState
 }>
 
 export type StudyLogInteractionEvent =
@@ -50,10 +60,14 @@ export type StudyLogInteractionEvent =
   | Readonly<{ type: 'saveSucceeded' }>
   | Readonly<{ type: 'saveFailed'; message: string }>
   | Readonly<{ type: 'editCancelled' }>
+  | Readonly<{ type: 'deletionStarted'; studyLogId: string }>
+  | Readonly<{ type: 'deletionSucceeded' }>
+  | Readonly<{ type: 'deletionFailed'; message: string }>
 
 export const initialStudyLogInteractionState: StudyLogInteractionState = {
   selectedStudyLogId: null,
   editor: { status: 'closed' },
+  deletion: { status: 'idle' },
 }
 
 export function studyLogInteractionReducer(
@@ -66,12 +80,14 @@ export function studyLogInteractionReducer(
         ...state,
         selectedStudyLogId: event.studyLogId,
         editor: { status: 'closed' },
+        deletion: { status: 'idle' },
       }
 
     case 'creationStarted':
       return {
         ...state,
         selectedStudyLogId: null,
+        deletion: { status: 'idle' },
         editor: {
           status: 'editing',
           target: {
@@ -89,6 +105,7 @@ export function studyLogInteractionReducer(
     case 'editStarted':
       return {
         ...state,
+        deletion: { status: 'idle' },
         editor: {
           status: 'editing',
           target: {
@@ -189,6 +206,47 @@ export function studyLogInteractionReducer(
       return {
         ...state,
         editor: { status: 'closed' },
+      }
+
+    case 'deletionStarted':
+      if (
+        state.editor.status !== 'closed' ||
+        state.deletion.status === 'deleting'
+      ) {
+        return state
+      }
+
+      return {
+        ...state,
+        deletion: {
+          status: 'deleting',
+          studyLogId: event.studyLogId,
+        },
+      }
+
+    case 'deletionSucceeded':
+      if (state.deletion.status !== 'deleting') {
+        return state
+      }
+
+      return {
+        selectedStudyLogId: null,
+        editor: { status: 'closed' },
+        deletion: { status: 'idle' },
+      }
+
+    case 'deletionFailed':
+      if (state.deletion.status !== 'deleting') {
+        return state
+      }
+
+      return {
+        ...state,
+        deletion: {
+          status: 'delete-error',
+          studyLogId: state.deletion.studyLogId,
+          message: event.message,
+        },
       }
   }
 }

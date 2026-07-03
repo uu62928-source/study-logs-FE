@@ -15,6 +15,7 @@ const updateTarget: EditorTarget = {
   mode: 'update',
   studyLogId: 'type-modeling',
 }
+const idleDeletion = { status: 'idle' } as const
 
 describe('studyLogInteractionReducer', () => {
   it('新規作成を開始すると新しいIDと空の入力値を保持する', () => {
@@ -34,6 +35,7 @@ describe('studyLogInteractionReducer', () => {
         values: { topic: '', durationMinutes: '' },
         errors: {},
       },
+      deletion: idleDeletion,
     })
   })
 
@@ -46,6 +48,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         errors: {},
       },
+      deletion: idleDeletion,
     }
 
     expect(
@@ -56,6 +59,7 @@ describe('studyLogInteractionReducer', () => {
     ).toEqual({
       selectedStudyLogId: 'new-log',
       editor: { status: 'closed' },
+      deletion: idleDeletion,
     })
   })
 
@@ -74,6 +78,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         errors: {},
       },
+      deletion: idleDeletion,
     })
   })
 
@@ -86,6 +91,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         errors: { topic: '学習内容を入力してください。' },
       },
+      deletion: idleDeletion,
     }
 
     expect(
@@ -102,6 +108,7 @@ describe('studyLogInteractionReducer', () => {
         values: { ...formValues, topic: 'React' },
         errors: {},
       },
+      deletion: idleDeletion,
     })
   })
 
@@ -113,6 +120,7 @@ describe('studyLogInteractionReducer', () => {
         target: updateTarget,
         values: formValues,
       },
+      deletion: idleDeletion,
     }
 
     expect(
@@ -128,6 +136,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         message: '保存できませんでした。',
       },
+      deletion: idleDeletion,
     })
   })
 
@@ -140,6 +149,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         message: '保存できませんでした。',
       },
+      deletion: idleDeletion,
     }
 
     expect(
@@ -151,6 +161,7 @@ describe('studyLogInteractionReducer', () => {
         target: updateTarget,
         values: formValues,
       },
+      deletion: idleDeletion,
     })
   })
 
@@ -163,6 +174,7 @@ describe('studyLogInteractionReducer', () => {
         values: formValues,
         errors: {},
       },
+      deletion: idleDeletion,
     }
 
     expect(
@@ -170,6 +182,7 @@ describe('studyLogInteractionReducer', () => {
     ).toEqual({
       selectedStudyLogId: 'type-modeling',
       editor: { status: 'closed' },
+      deletion: idleDeletion,
     })
   })
 
@@ -181,10 +194,54 @@ describe('studyLogInteractionReducer', () => {
         target: updateTarget,
         values: formValues,
       },
+      deletion: idleDeletion,
     }
 
     expect(studyLogInteractionReducer(state, { type: 'editCancelled' })).toBe(
       state,
     )
+  })
+
+  it('削除成功時に選択を解除する', () => {
+    const deletingState: StudyLogInteractionState = {
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: {
+        status: 'deleting',
+        studyLogId: 'type-modeling',
+      },
+    }
+
+    expect(
+      studyLogInteractionReducer(deletingState, {
+        type: 'deletionSucceeded',
+      }),
+    ).toEqual(initialStudyLogInteractionState)
+  })
+
+  it('削除失敗時に選択と削除対象を残す', () => {
+    const deletingState: StudyLogInteractionState = {
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: {
+        status: 'deleting',
+        studyLogId: 'type-modeling',
+      },
+    }
+
+    expect(
+      studyLogInteractionReducer(deletingState, {
+        type: 'deletionFailed',
+        message: '削除できませんでした。',
+      }),
+    ).toEqual({
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: {
+        status: 'delete-error',
+        studyLogId: 'type-modeling',
+        message: '削除できませんでした。',
+      },
+    })
   })
 })

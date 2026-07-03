@@ -1,4 +1,5 @@
 import type { AddStudyLog } from '../application/use-cases/addStudyLog'
+import type { DeleteStudyLog } from '../application/use-cases/deleteStudyLog'
 import type { GetStudyLogSummary } from '../application/use-cases/getStudyLogSummary'
 import type { UpdateStudyLog } from '../application/use-cases/updateStudyLog'
 import type { StudyLog } from '../domain/studyLog'
@@ -8,12 +9,14 @@ import './StudyLogPage.css'
 
 type StudyLogPageProps = Readonly<{
   addStudyLog: AddStudyLog
+  deleteStudyLog: DeleteStudyLog
   getStudyLogSummary: GetStudyLogSummary
   updateStudyLog: UpdateStudyLog
 }>
 
 export function StudyLogPage({
   addStudyLog,
+  deleteStudyLog,
   getStudyLogSummary,
   updateStudyLog,
 }: StudyLogPageProps) {
@@ -29,10 +32,16 @@ export function StudyLogPage({
     reload()
   }
 
+  async function handleDeleteStudyLog(studyLogId: string): Promise<void> {
+    await deleteStudyLog(studyLogId)
+    reload()
+  }
+
   return (
     <StudyLogView
       {...state}
       onAddStudyLog={handleAddStudyLog}
+      onDeleteStudyLog={handleDeleteStudyLog}
       onUpdateStudyLog={handleUpdateStudyLog}
     />
   )

@@ -60,4 +60,30 @@ describe('InMemoryStudyLogRepository', () => {
       '更新対象の学習ログが見つかりません。',
     )
   })
+
+  it('同じIDの学習ログを削除する', async () => {
+    const studyLog = createStudyLog({
+      id: 'type-modeling',
+      topic: 'TypeScript',
+      durationMinutes: 30,
+    })
+    const repository = new InMemoryStudyLogRepository([studyLog])
+
+    await repository.remove(studyLog.id)
+
+    await expect(repository.findAll()).resolves.toEqual([])
+  })
+
+  it('存在しないIDは削除できない', async () => {
+    const studyLog = createStudyLog({
+      id: 'missing',
+      topic: 'TypeScript',
+      durationMinutes: 30,
+    })
+    const repository = new InMemoryStudyLogRepository([])
+
+    await expect(repository.remove(studyLog.id)).rejects.toThrow(
+      '削除対象の学習ログが見つかりません。',
+    )
+  })
 })

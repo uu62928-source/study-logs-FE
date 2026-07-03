@@ -9,10 +9,12 @@ import {
 } from './studyLogInteraction'
 
 type SaveStudyLog = (studyLog: StudyLog) => Promise<void>
+type DeleteStudyLog = (studyLogId: string) => Promise<void>
 type CreateId = () => string
 
 type UseStudyLogInteractionDependencies = Readonly<{
   addStudyLog: SaveStudyLog
+  deleteStudyLog: DeleteStudyLog
   updateStudyLog: SaveStudyLog
   createId?: CreateId
 }>
@@ -25,10 +27,12 @@ type UseStudyLogInteractionResult = Readonly<{
   changeFormValue: (field: keyof StudyLogFormValues, value: string) => void
   submitEdit: () => Promise<void>
   cancelEditing: () => void
+  deleteSelectedStudyLog: () => Promise<void>
 }>
 
 export function useStudyLogInteraction({
   addStudyLog,
+  deleteStudyLog,
   updateStudyLog,
   createId = () => crypto.randomUUID(),
 }: UseStudyLogInteractionDependencies): UseStudyLogInteractionResult {
@@ -99,6 +103,29 @@ export function useStudyLogInteraction({
     dispatch({ type: 'editCancelled' })
   }
 
+  async function deleteSelectedStudyLog(): Promise<void> {
+    if (
+      interaction.selectedStudyLogId === null ||
+      interaction.editor.status !== 'closed' ||
+      interaction.deletion.status === 'deleting'
+    ) {
+      return
+    }
+
+    const studyLogId = interaction.selectedStudyLogId
+    dispatch({ type: 'deletionStarted', studyLogId })
+
+    try {
+      await deleteStudyLog(studyLogId)
+      dispatch({ type: 'deletionSucceeded' })
+    } catch {
+      dispatch({
+        type: 'deletionFailed',
+        message: '学習ログを削除できませんでした。',
+      })
+    }
+  }
+
   return {
     interaction,
     selectStudyLog,
@@ -107,5 +134,6 @@ export function useStudyLogInteraction({
     changeFormValue,
     submitEdit,
     cancelEditing,
+    deleteSelectedStudyLog,
   }
 }

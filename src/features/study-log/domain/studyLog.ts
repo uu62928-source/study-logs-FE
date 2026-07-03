@@ -21,17 +21,22 @@ type CreateStudyLogInput = Readonly<{
   durationMinutes: number
 }>
 
+export function createStudyLogId(id: string): StudyLogId {
+  const normalizedId = id.trim()
+
+  if (normalizedId.length === 0) {
+    throw new Error('学習ログIDは必須です。')
+  }
+
+  return normalizedId as StudyLogId
+}
+
 export function createStudyLog({
   id,
   topic,
   durationMinutes,
 }: CreateStudyLogInput): StudyLog {
-  const normalizedId = id.trim()
   const normalizedTopic = topic.trim()
-
-  if (normalizedId.length === 0) {
-    throw new Error('学習ログIDは必須です。')
-  }
 
   if (normalizedTopic.length === 0) {
     throw new Error('学習内容は必須です。')
@@ -46,7 +51,7 @@ export function createStudyLog({
   }
 
   return {
-    id: normalizedId as StudyLogId,
+    id: createStudyLogId(id),
     topic: normalizedTopic,
     durationMinutes: durationMinutes as StudyDurationMinutes,
   }

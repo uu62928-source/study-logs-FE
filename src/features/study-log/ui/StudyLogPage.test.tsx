@@ -11,6 +11,7 @@ import { StudyLogPage } from './StudyLogPage'
 
 describe('StudyLogPage', () => {
   const addStudyLog = () => Promise.resolve()
+  const deleteStudyLog = () => Promise.resolve()
   const updateStudyLog = () => Promise.resolve()
 
   it('取得した学習ログと合計時間を表示する', async () => {
@@ -30,6 +31,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -49,6 +51,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -69,6 +72,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -100,6 +104,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -128,6 +133,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addNewStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -155,6 +161,47 @@ describe('StudyLogPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('選択した学習ログを削除して空状態へ戻る', async () => {
+    const user = userEvent.setup()
+    let studyLogs: StudyLog[] = [
+      createStudyLog({
+        id: 'type-modeling',
+        topic: 'TypeScript',
+        durationMinutes: 30,
+      }),
+    ]
+    const getStudyLogSummary = () =>
+      Promise.resolve({
+        studyLogs,
+        totalMinutes: calculateTotalStudyMinutes(studyLogs),
+      })
+    const deleteExistingStudyLog = vi.fn((studyLogId: string) => {
+      studyLogs = studyLogs.filter(({ id }) => id !== studyLogId)
+      return Promise.resolve()
+    })
+
+    render(
+      <StudyLogPage
+        addStudyLog={addStudyLog}
+        deleteStudyLog={deleteExistingStudyLog}
+        getStudyLogSummary={getStudyLogSummary}
+        updateStudyLog={updateStudyLog}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', { name: 'TypeScript 30分' }),
+    )
+    await user.click(screen.getByRole('button', { name: '削除する' }))
+
+    expect(deleteExistingStudyLog).toHaveBeenCalledWith('type-modeling')
+    expect(
+      await screen.findByText(
+        'まだ学習ログがありません。最初の記録を追加しましょう。',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('詳細から学習ログを編集して再読み込みする', async () => {
     const user = userEvent.setup()
     let studyLogs: StudyLog[] = [
@@ -179,6 +226,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -226,6 +274,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,
@@ -261,6 +310,7 @@ describe('StudyLogPage', () => {
     render(
       <StudyLogPage
         addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
         getStudyLogSummary={getStudyLogSummary}
         updateStudyLog={updateStudyLog}
       />,

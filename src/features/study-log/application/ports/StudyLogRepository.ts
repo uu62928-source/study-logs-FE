@@ -1,4 +1,4 @@
-import type { StudyLog } from '../../domain/studyLog'
+import type { StudyLog, StudyLogId } from '../../domain/studyLog'
 
 export interface StudyLogReader {
   findAll(): Promise<readonly StudyLog[]>
@@ -12,5 +12,9 @@ export interface StudyLogWriter {
   save(studyLog: StudyLog): Promise<void>
 }
 
+export interface StudyLogDeleter {
+  remove(studyLogId: StudyLogId): Promise<void>
+}
+
 export interface StudyLogRepository
-  extends StudyLogReader, StudyLogCreator, StudyLogWriter {}
+  extends StudyLogReader, StudyLogCreator, StudyLogWriter, StudyLogDeleter {}

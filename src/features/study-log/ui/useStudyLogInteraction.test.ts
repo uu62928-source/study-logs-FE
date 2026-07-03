@@ -10,14 +10,17 @@ const validValues = {
 
 function renderInteractionHook({
   addStudyLog = vi.fn(() => Promise.resolve()),
+  deleteStudyLog = vi.fn(() => Promise.resolve()),
   updateStudyLog = vi.fn(() => Promise.resolve()),
 } = {}) {
   return {
     addStudyLog,
+    deleteStudyLog,
     updateStudyLog,
     ...renderHook(() =>
       useStudyLogInteraction({
         addStudyLog,
+        deleteStudyLog,
         updateStudyLog,
         createId: () => 'new-study-log',
       }),
@@ -123,6 +126,50 @@ describe('useStudyLogInteraction', () => {
       },
       values: validValues,
       message: '学習ログを保存できませんでした。',
+    })
+  })
+
+  it('選択中の学習ログを削除して選択を解除する', async () => {
+    const { deleteStudyLog, result } = renderInteractionHook()
+
+    act(() => {
+      result.current.selectStudyLog('type-modeling')
+    })
+
+    await act(async () => {
+      await result.current.deleteSelectedStudyLog()
+    })
+
+    expect(deleteStudyLog).toHaveBeenCalledWith('type-modeling')
+    expect(result.current.interaction).toEqual({
+      selectedStudyLogId: null,
+      editor: { status: 'closed' },
+      deletion: { status: 'idle' },
+    })
+  })
+
+  it('削除失敗時に選択を残してエラーにする', async () => {
+    const deleteStudyLog = vi.fn(() =>
+      Promise.reject(new Error('delete failed')),
+    )
+    const { result } = renderInteractionHook({ deleteStudyLog })
+
+    act(() => {
+      result.current.selectStudyLog('type-modeling')
+    })
+
+    await act(async () => {
+      await result.current.deleteSelectedStudyLog()
+    })
+
+    expect(result.current.interaction).toEqual({
+      selectedStudyLogId: 'type-modeling',
+      editor: { status: 'closed' },
+      deletion: {
+        status: 'delete-error',
+        studyLogId: 'type-modeling',
+        message: '学習ログを削除できませんでした。',
+      },
     })
   })
 })

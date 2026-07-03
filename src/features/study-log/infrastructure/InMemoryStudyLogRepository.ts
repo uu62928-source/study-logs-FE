@@ -1,5 +1,5 @@
 import type { StudyLogRepository } from '../application/ports/StudyLogRepository'
-import type { StudyLog } from '../domain/studyLog'
+import type { StudyLog, StudyLogId } from '../domain/studyLog'
 
 export class InMemoryStudyLogRepository implements StudyLogRepository {
   #studyLogs: StudyLog[]
@@ -32,6 +32,18 @@ export class InMemoryStudyLogRepository implements StudyLogRepository {
     }
 
     this.#studyLogs[index] = studyLog
+
+    return Promise.resolve()
+  }
+
+  remove(studyLogId: StudyLogId): Promise<void> {
+    const index = this.#studyLogs.findIndex(({ id }) => id === studyLogId)
+
+    if (index === -1) {
+      return Promise.reject(new Error('削除対象の学習ログが見つかりません。'))
+    }
+
+    this.#studyLogs.splice(index, 1)
 
     return Promise.resolve()
   }

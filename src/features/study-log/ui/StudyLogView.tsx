@@ -12,6 +12,7 @@ import { useStudyLogInteraction } from './useStudyLogInteraction'
 type StudyLogViewProps = StudyLogViewState &
   Readonly<{
     onAddStudyLog: (studyLog: StudyLog) => Promise<void>
+    onDeleteStudyLog: (studyLogId: string) => Promise<void>
     onUpdateStudyLog: (studyLog: StudyLog) => Promise<void>
   }>
 
@@ -107,8 +108,10 @@ export function StudyLogView(props: StudyLogViewProps) {
     changeFormValue,
     submitEdit: saveEdit,
     cancelEditing,
+    deleteSelectedStudyLog,
   } = useStudyLogInteraction({
     addStudyLog: props.onAddStudyLog,
+    deleteStudyLog: props.onDeleteStudyLog,
     updateStudyLog: props.onUpdateStudyLog,
   })
 
@@ -248,9 +251,29 @@ export function StudyLogView(props: StudyLogViewProps) {
                   <p>学習時間：{selectedStudyLog.durationLabel}</p>
 
                   {interaction.editor.status === 'closed' ? (
-                    <button type="button" onClick={startEditing}>
-                      編集する
-                    </button>
+                    <>
+                      <div className="form-actions">
+                        <button type="button" onClick={startEditing}>
+                          編集する
+                        </button>
+                        <button
+                          type="button"
+                          disabled={interaction.deletion.status === 'deleting'}
+                          onClick={() => {
+                            void deleteSelectedStudyLog()
+                          }}
+                        >
+                          {interaction.deletion.status === 'deleting'
+                            ? '削除中...'
+                            : '削除する'}
+                        </button>
+                      </div>
+                      {interaction.deletion.status === 'delete-error' && (
+                        <p className="field-error" role="alert">
+                          {interaction.deletion.message}
+                        </p>
+                      )}
+                    </>
                   ) : interaction.editor.target.mode === 'update' ? (
                     <StudyLogEditorForm
                       editor={interaction.editor}

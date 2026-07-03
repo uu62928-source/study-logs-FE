@@ -1,4 +1,5 @@
 import { createAddStudyLog } from './application/use-cases/addStudyLog'
+import { createDeleteStudyLog } from './application/use-cases/deleteStudyLog'
 import { createGetStudyLogSummary } from './application/use-cases/getStudyLogSummary'
 import { createUpdateStudyLog } from './application/use-cases/updateStudyLog'
 import { createStudyLog } from './domain/studyLog'
@@ -22,6 +23,7 @@ export function configureStudyLog() {
 
   return {
     addStudyLog: createAddStudyLog(repository),
+    deleteStudyLog: createDeleteStudyLog(repository),
     getStudyLogSummary: createGetStudyLogSummary(repository),
     updateStudyLog: createUpdateStudyLog(repository),
   }
