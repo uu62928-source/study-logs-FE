@@ -21,6 +21,7 @@ describe('toStudyLogSummaryViewModel', () => {
         {
           id: 'type-modeling',
           topic: '型モデリング',
+          durationMinutes: 90,
           durationLabel: '90分',
           durationInputValue: '90',
         },

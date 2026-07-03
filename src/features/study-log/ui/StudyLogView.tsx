@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import type { StudyLog } from '../domain/studyLog'
 import type { StudyLogFormValues } from './studyLogForm'
 import type { EditorState } from './studyLogInteraction'
+import { sortStudyLogs, type StudyLogSortOrder } from './studyLogList'
 import type {
   StudyLogListItemViewModel,
   StudyLogViewState,
@@ -100,6 +101,7 @@ function StudyLogEditorForm({
 
 export function StudyLogView(props: StudyLogViewProps) {
   const [filterQuery, setFilterQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<StudyLogSortOrder>('original')
   const {
     interaction,
     selectStudyLog,
@@ -116,15 +118,16 @@ export function StudyLogView(props: StudyLogViewProps) {
   })
 
   const normalizedQuery = filterQuery.trim().toLocaleLowerCase()
-  let filteredStudyLogs: readonly StudyLogListItemViewModel[] = []
+  let visibleStudyLogs: readonly StudyLogListItemViewModel[] = []
 
   if (props.status === 'success') {
-    filteredStudyLogs =
+    const filteredStudyLogs =
       normalizedQuery.length === 0
         ? props.summary.studyLogs
         : props.summary.studyLogs.filter((studyLog) =>
             studyLog.topic.toLocaleLowerCase().includes(normalizedQuery),
           )
+    visibleStudyLogs = sortStudyLogs(filteredStudyLogs, sortOrder)
   }
 
   const selectedStudyLog =
@@ -211,11 +214,25 @@ export function StudyLogView(props: StudyLogViewProps) {
               />
             </label>
 
-            {filteredStudyLogs.length === 0 ? (
+            <label className="filter-field">
+              <span>並び順</span>
+              <select
+                value={sortOrder}
+                onChange={(event) =>
+                  setSortOrder(event.target.value as StudyLogSortOrder)
+                }
+              >
+                <option value="original">登録順</option>
+                <option value="topic-asc">学習内容順</option>
+                <option value="duration-desc">学習時間が長い順</option>
+              </select>
+            </label>
+
+            {visibleStudyLogs.length === 0 ? (
               <p>条件に一致する学習ログがありません。</p>
             ) : (
               <ul className="study-log-list">
-                {filteredStudyLogs.map((studyLog) => (
+                {visibleStudyLogs.map((studyLog) => (
                   <li key={studyLog.id}>
                     <button
                       type="button"

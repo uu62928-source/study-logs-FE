@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -115,6 +115,50 @@ describe('StudyLogPage', () => {
 
     expect(screen.queryByText('React')).not.toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
+  })
+
+  it('学習内容または学習時間で一覧を並び替える', async () => {
+    const user = userEvent.setup()
+    const getStudyLogSummary = () =>
+      Promise.resolve({
+        studyLogs: [
+          createStudyLog({
+            id: 'typescript',
+            topic: 'TypeScript',
+            durationMinutes: 60,
+          }),
+          createStudyLog({
+            id: 'react',
+            topic: 'React',
+            durationMinutes: 30,
+          }),
+        ],
+        totalMinutes: 90,
+      })
+
+    render(
+      <StudyLogPage
+        addStudyLog={addStudyLog}
+        deleteStudyLog={deleteStudyLog}
+        getStudyLogSummary={getStudyLogSummary}
+        updateStudyLog={updateStudyLog}
+      />,
+    )
+
+    const list = await screen.findByRole('list')
+    await user.selectOptions(screen.getByLabelText('並び順'), 'topic-asc')
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['React30分', 'TypeScript60分'])
+
+    await user.selectOptions(screen.getByLabelText('並び順'), 'duration-desc')
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['TypeScript60分', 'React30分'])
   })
 
   it('空状態から新しい学習ログを追加する', async () => {

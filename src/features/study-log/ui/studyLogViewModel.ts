@@ -3,6 +3,7 @@ import type { StudyLogSummary } from '../application/use-cases/getStudyLogSummar
 export type StudyLogListItemViewModel = Readonly<{
   id: string
   topic: string
+  durationMinutes: number
   durationLabel: string
   durationInputValue: string
 }>
@@ -25,6 +26,7 @@ export function toStudyLogSummaryViewModel(
     studyLogs: summary.studyLogs.map((studyLog) => ({
       id: studyLog.id,
       topic: studyLog.topic,
+      durationMinutes: studyLog.durationMinutes,
       durationLabel: `${studyLog.durationMinutes}分`,
       durationInputValue: String(studyLog.durationMinutes),
     })),
