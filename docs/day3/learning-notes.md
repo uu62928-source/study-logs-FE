@@ -338,4 +338,42 @@ const sortedStudyLogs = [...studyLogs].sort(compareFunction)
 
 フィルタ後の一覧を並び替えることで、検索条件と並び順を組み合わせた表示用一覧をderived stateとして計算する。テストでは並び順に加え、元の配列が変更されていないことも確認した。
 
+### localStorageをRepositoryへ閉じ込める
+
+localStorageは外部システムなので、UI、custom hook、reducerから直接操作せず、Infrastructure層の`LocalStorageStudyLogRepository`へ閉じ込めた。
+
+```text
+UI / custom hook / use case
+            ↓
+   StudyLogRepository
+      ├─ InMemoryStudyLogRepository
+      └─ LocalStorageStudyLogRepository
+```
+
+両方が同じRepository契約を実装するため、UIやuse caseを変更せず、アプリの構成部分で保存先を交換できる。
+
+localStorageの実体をRepository内へ固定せず、`getItem`と`setItem`を持つオブジェクトをコンストラクタから受け取る。テストではインメモリのStorageを渡すことで、本物のlocalStorageを汚さずに初回起動、保存、復元、破損を再現できる。
+
+### 外部データを`unknown`から検証する
+
+`JSON.parse()`で得た値へ`as StudyLog[]`と書いても、型アサーションは実行時の値を検証しない。外部データは概念的に`unknown`として扱い、オブジェクト、配列、各フィールドの型を確認してからDomain型へ変換する。
+
+```text
+localStorage.getItem()
+  ↓
+JSON.parse()
+  ↓
+unknownとしてDTOの構造を検証
+  ↓
+createStudyLog()でDomainルールを検証
+  ↓
+StudyLogとして返す
+```
+
+保存形式には`version: 1`を持つDTOを使用した。未対応バージョン、壊れたJSON、不正なフィールド、Domainルールに違反する値は読み込み全体を失敗させる。壊れた1件だけを黙って捨てると、ユーザーにはデータが消えたように見えるためである。
+
+保存データが存在しない`null`は初回起動として初期データを返す。一方、空配列が保存されている場合は、ユーザーがすべて削除した結果として空のまま復元する。
+
+Repository契約は将来のAPI実装と同じく非同期の`Promise`を返す。localStorageの同期例外は`attempt`でrejectされたPromiseへ変換し、既存のエラー処理へ流す。
+
 ## 疑問・確認したいこと

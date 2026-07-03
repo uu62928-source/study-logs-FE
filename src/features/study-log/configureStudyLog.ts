@@ -3,7 +3,7 @@ import { createDeleteStudyLog } from './application/use-cases/deleteStudyLog'
 import { createGetStudyLogSummary } from './application/use-cases/getStudyLogSummary'
 import { createUpdateStudyLog } from './application/use-cases/updateStudyLog'
 import { createStudyLog } from './domain/studyLog'
-import { InMemoryStudyLogRepository } from './infrastructure/InMemoryStudyLogRepository'
+import { LocalStorageStudyLogRepository } from './infrastructure/LocalStorageStudyLogRepository'
 
 const initialStudyLogs = [
   createStudyLog({
@@ -18,8 +18,12 @@ const initialStudyLogs = [
   }),
 ]
 
-export function configureStudyLog() {
-  const repository = new InMemoryStudyLogRepository(initialStudyLogs)
+export function configureStudyLog(storage: Storage = window.localStorage) {
+  const repository = new LocalStorageStudyLogRepository(
+    storage,
+    'study-logs',
+    initialStudyLogs,
+  )
 
   return {
     addStudyLog: createAddStudyLog(repository),

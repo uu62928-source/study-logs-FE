@@ -41,6 +41,11 @@
 - 登録順、学習内容順、学習時間順の並び替え
 - 元配列を変更しない`sortStudyLogs`
 - フィルタ結果と並び順から計算する表示用一覧
+- バージョン付きDTOを使う`LocalStorageStudyLogRepository`
+- localStorageへの追加、更新、削除、復元
+- `unknown`からのDTO構造とDomainルールの実行時検証
+- Storageを外から受け取ることで本物のlocalStorageを使わないテスト
+- 破損JSON、不正データ、未対応バージョンのエラー処理
 
 ## うまくいったこと
 
@@ -67,6 +72,10 @@
 - 並び替え結果をstateへ保存せず、元の一覧と`sortOrder`から計算できた
 - propsの配列をコピーしてから並び替え、元の登録順を維持できた
 - 並び替え実装後も全63件のテスト、lint、buildが成功した
+- 型アサーションは実行時検証ではなく、外部データを信用する前に構造の確認が必要だと理解できた
+- Repository契約を維持したまま、アプリの保存先をインメモリからlocalStorageへ交換できた
+- Storageを外から渡すことで、mockでも同じRepository処理をテストできた
+- localStorage実装後も全70件のテスト、lint、buildが成功した
 
 ## 次回の課題
 
