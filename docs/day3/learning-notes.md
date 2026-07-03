@@ -228,4 +228,51 @@ const {
 
 hookのテストでは、保存成功、入力値の検証失敗、保存失敗時の入力値保持を確認した。
 
+### 追加と更新を型とuse caseで分ける
+
+追加と更新は同じフォームを利用できるが、操作の意味とRepositoryに求める条件が異なる。
+
+```text
+add
+├─ 同じIDがない → 追加成功
+└─ 同じIDがある → 失敗
+
+save
+├─ 同じIDがある → 更新成功
+└─ 同じIDがない → 失敗
+```
+
+更新なのに新規追加したり、追加なのに既存データを上書きしたりしないよう、Repositoryの`add`と`save`、Application層の追加use caseと更新use caseを分けた。
+
+フォームの目的はoptionalなIDではなく、discriminated unionで表した。
+
+```ts
+type EditorTarget =
+  | Readonly<{
+      mode: 'create'
+      newStudyLogId: string
+    }>
+  | Readonly<{
+      mode: 'update'
+      studyLogId: string
+    }>
+```
+
+これにより、追加と更新の区別が`mode`で明確になり、それぞれに必要なIDを型で必須にできる。`editing`、`saving`、`save-error`の各状態で`target`を保持するため、保存中や再試行時にも追加と更新のどちらを実行するか判断できる。
+
+新規IDの生成には`crypto.randomUUID()`を使う。毎回結果が変わる処理をreducerへ置くと純粋関数ではなくなるため、custom hookの`startCreating`で一度だけ生成し、eventとしてreducerへ渡す。
+
+```ts
+function startCreating() {
+  dispatch({
+    type: 'creationStarted',
+    newStudyLogId: createId(),
+  })
+}
+```
+
+ID生成関数はcustom hookへ注入できるようにし、テストでは固定IDを返す。保存に失敗して再試行する場合も、最初に生成した同じIDを利用する。
+
+空の一覧から追加フォームを開き、入力値を検証して追加し、再読み込み後の一覧へ表示できることを画面テストで確認した。
+
 ## 疑問・確認したいこと

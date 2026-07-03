@@ -29,6 +29,11 @@
 - `useStudyLogInteraction`による状態管理、入力検証、保存処理の集約
 - custom hookの保存成功、検証失敗、保存失敗のテスト3件
 - `StudyLogView`から`dispatch`と保存手順を除去
+- 追加と更新を区別する`EditorTarget`
+- 新規IDを一度だけ生成する`startCreating`
+- Repositoryの`add`と追加用use case
+- 空状態と一覧表示中の両方から利用できる追加フォーム
+- ID重複時の追加失敗と、存在しないIDの更新失敗
 
 ## うまくいったこと
 
@@ -45,6 +50,10 @@
 - custom hookへ`dispatch`を公開せず、`submitEdit`などの意図を表す操作だけを公開できた
 - 保存関数を外から受け取ることで、custom hookを特定のRepository実装から切り離せた
 - custom hook追加後も全45件のテスト、lint、buildが成功した
+- optionalなIDではなく`create`と`update`のunionを使い、不正な組み合わせを型で防げた
+- ランダムなID生成をreducerの外へ置き、reducerを純粋関数に保てた
+- 追加と更新を別のRepository操作にして、意図しない追加や上書きを防げた
+- 追加機能の実装後も全51件のテスト、lint、buildが成功した
 
 ## 次回の課題
 
