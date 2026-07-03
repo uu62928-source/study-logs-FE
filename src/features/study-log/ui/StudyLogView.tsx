@@ -1,14 +1,15 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
 
 import type { StudyLog } from '../domain/studyLog'
 import type { StudyLogFormValues } from './studyLogForm'
 import type { EditorState } from './studyLogInteraction'
-import { sortStudyLogs, type StudyLogSortOrder } from './studyLogList'
+import { sortStudyLogs } from './studyLogList'
 import type {
   StudyLogListItemViewModel,
   StudyLogViewState,
 } from './studyLogViewModel'
 import { useStudyLogInteraction } from './useStudyLogInteraction'
+import { useStudyLogSearchParams } from './useStudyLogSearchParams'
 
 type StudyLogViewProps = StudyLogViewState &
   Readonly<{
@@ -100,8 +101,8 @@ function StudyLogEditorForm({
 }
 
 export function StudyLogView(props: StudyLogViewProps) {
-  const [filterQuery, setFilterQuery] = useState('')
-  const [sortOrder, setSortOrder] = useState<StudyLogSortOrder>('original')
+  const { filterQuery, sortOrder, changeFilterQuery, changeSortOrder } =
+    useStudyLogSearchParams()
   const {
     interaction,
     selectStudyLog,
@@ -216,7 +217,7 @@ export function StudyLogView(props: StudyLogViewProps) {
               <input
                 type="search"
                 value={filterQuery}
-                onChange={(event) => setFilterQuery(event.target.value)}
+                onChange={(event) => changeFilterQuery(event.target.value)}
                 placeholder="例: TypeScript"
               />
             </label>
@@ -226,7 +227,10 @@ export function StudyLogView(props: StudyLogViewProps) {
               <select
                 value={sortOrder}
                 onChange={(event) =>
-                  setSortOrder(event.target.value as StudyLogSortOrder)
+                  changeSortOrder(
+                    event.target.value as
+                      'original' | 'topic-asc' | 'duration-desc',
+                  )
                 }
               >
                 <option value="original">登録順</option>

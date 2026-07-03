@@ -389,4 +389,30 @@ reducerのguard → 不正なeventでも状態を壊さない
 
 `editStarted`では`selectedStudyLogId`も編集対象IDへ揃える。削除開始時は、eventの削除対象IDと現在の選択IDが一致する場合だけ受け付ける。これにより、「選択なしで既存ログを編集中」「選択中ではないログを削除中」といった矛盾した状態を防ぐ。
 
+### 検索条件と並び順をURL stateにする
+
+検索条件と並び順は、再読み込み後も復元したい、共有したい、ブックマークしたい値なのでURL search paramsへ移した。
+
+```text
+?q=TypeScript&sort=duration-desc
+```
+
+URLを唯一の情報源とし、`filterQuery`と`sortOrder`を同じ意味の`useState`へコピーしない。URLとローカルstateの両方に持つと、どちらが正しいか決める必要があり、同期漏れや更新ループの原因になる。
+
+```text
+URL search params
+    ↓
+useStudyLogSearchParams
+    ↓
+filterQuery / sortOrder
+    ↓
+表示一覧を計算
+```
+
+URLはReactの外部にある状態なので、`useSyncExternalStore`で`window.location.search`を購読する。`history.replaceState()`はReactへ変更を通知しないため、書き換え後に専用eventを発行する。ブラウザ履歴による`popstate`も同じ購読処理で反映する。
+
+検索条件が空、または並び順が登録順の場合は既定値としてパラメータを削除する。不正な`sort`値は`original`として扱う。
+
+テストではURLからの初期値、検索・並び順の書き換え、既定値の削除、不正値、ブラウザ履歴による変更を確認した。
+
 ## 疑問・確認したいこと

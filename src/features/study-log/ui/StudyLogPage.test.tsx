@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   calculateTotalStudyMinutes,
@@ -13,6 +13,10 @@ describe('StudyLogPage', () => {
   const addStudyLog = () => Promise.resolve()
   const deleteStudyLog = () => Promise.resolve()
   const updateStudyLog = () => Promise.resolve()
+
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/')
+  })
 
   it('取得した学習ログと合計時間を表示する', async () => {
     const getStudyLogSummary = () =>
