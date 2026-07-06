@@ -28,6 +28,7 @@ const loadingViewWithSave: StudyLogViewProps = {
   status: 'loading',
   onAddStudyLog: () => Promise.resolve(),
   onDeleteStudyLog: () => Promise.resolve(),
+  onReload: () => undefined,
   onUpdateStudyLog: () => Promise.resolve(),
 }
 

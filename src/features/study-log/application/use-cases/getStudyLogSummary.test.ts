@@ -20,4 +20,20 @@ describe('getStudyLogSummary', () => {
       totalMinutes: 60,
     })
   })
+
+  it('一覧取得へAbortSignalを渡す', async () => {
+    let receivedSignal: AbortSignal | undefined
+    const repository: StudyLogReader = {
+      findAll: (options) => {
+        receivedSignal = options?.signal
+        return Promise.resolve([])
+      },
+    }
+    const getStudyLogSummary = createGetStudyLogSummary(repository)
+    const abortController = new AbortController()
+
+    await getStudyLogSummary({ signal: abortController.signal })
+
+    expect(receivedSignal).toBe(abortController.signal)
+  })
 })

@@ -1,7 +1,11 @@
 import type { StudyLog, StudyLogId } from '../../domain/studyLog'
 
+export type StudyLogRequestOptions = Readonly<{
+  signal?: AbortSignal
+}>
+
 export interface StudyLogReader {
-  findAll(): Promise<readonly StudyLog[]>
+  findAll(options?: StudyLogRequestOptions): Promise<readonly StudyLog[]>
 }
 
 export interface StudyLogCreator {

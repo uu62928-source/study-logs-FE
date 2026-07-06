@@ -21,8 +21,9 @@ export function useStudyLogSummary(
 
   useEffect(() => {
     let isActive = true
+    const abortController = new AbortController()
 
-    void getStudyLogSummary()
+    void getStudyLogSummary({ signal: abortController.signal })
       .then((summary) => {
         if (isActive) {
           setState(
@@ -46,6 +47,7 @@ export function useStudyLogSummary(
 
     return () => {
       isActive = false
+      abortController.abort()
     }
   }, [getStudyLogSummary, requestVersion])
 

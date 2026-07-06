@@ -15,6 +15,7 @@ type StudyLogViewProps = StudyLogViewState &
   Readonly<{
     onAddStudyLog: (studyLog: StudyLog) => Promise<void>
     onDeleteStudyLog: (studyLogId: string) => Promise<void>
+    onReload: () => void
     onUpdateStudyLog: (studyLog: StudyLog) => Promise<void>
   }>
 
@@ -182,7 +183,7 @@ export function StudyLogView(props: StudyLogViewProps) {
 
   return (
     <main className="page">
-      <p className="eyebrow">Day 2 · Type Modeling</p>
+      <p className="eyebrow">Day 4 · Server State</p>
       <h1>学習ログ</h1>
       <p className="lead">
         学んだことと時間を記録し、継続を見える形にするためのアプリです。
@@ -194,7 +195,14 @@ export function StudyLogView(props: StudyLogViewProps) {
 
         {props.status === 'loading' && <p>読み込み中...</p>}
 
-        {props.status === 'error' && <p role="alert">{props.message}</p>}
+        {props.status === 'error' && (
+          <>
+            <p role="alert">{props.message}</p>
+            <button type="button" onClick={props.onReload}>
+              再試行する
+            </button>
+          </>
+        )}
 
         {props.status === 'empty' && (
           <p>まだ学習ログがありません。最初の記録を追加しましょう。</p>

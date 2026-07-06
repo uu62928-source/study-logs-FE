@@ -49,8 +49,20 @@ describe('StudyLogPage', () => {
     expect(screen.getByText('75分')).toBeInTheDocument()
   })
 
-  it('取得に失敗したらエラーを表示する', async () => {
-    const getStudyLogSummary = () => Promise.reject(new Error('failed'))
+  it('取得失敗後に再試行できる', async () => {
+    const user = userEvent.setup()
+    const studyLog = createStudyLog({
+      id: 'retry',
+      topic: '再試行',
+      durationMinutes: 20,
+    })
+    const getStudyLogSummary = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('failed'))
+      .mockResolvedValueOnce({
+        studyLogs: [studyLog],
+        totalMinutes: 20,
+      })
 
     render(
       <StudyLogPage
@@ -64,6 +76,11 @@ describe('StudyLogPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '学習ログを読み込めませんでした。',
     )
+
+    await user.click(screen.getByRole('button', { name: '再試行する' }))
+
+    expect(await screen.findByText('再試行')).toBeInTheDocument()
+    expect(getStudyLogSummary).toHaveBeenCalledTimes(2)
   })
 
   it('学習ログが0件なら空状態を表示する', async () => {

@@ -42,6 +42,7 @@ export function StudyLogPage({
       {...state}
       onAddStudyLog={handleAddStudyLog}
       onDeleteStudyLog={handleDeleteStudyLog}
+      onReload={reload}
       onUpdateStudyLog={handleUpdateStudyLog}
     />
   )
